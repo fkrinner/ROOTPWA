@@ -34,6 +34,11 @@ namespace {
 		return bp::make_tuple(result, amplitude);
 	}
 
+	bp::tuple waveDescription_binBorders(const rpwa::waveDescription& self, unsigned int nBin){
+		std::pair<double,double> borders = self.binBorders(nBin);
+		return bp::make_tuple(borders.first, borders.second);
+	};
+
 	bool waveDescription_writeKeyFile(const std::string& keyFileName,
 	                                  const bp::object   pyTopoOrAmp,
 							          const bool         writeProdVert = true)
@@ -103,6 +108,7 @@ void rpwa::py::exportWaveDescription() {
 
 		.add_static_property("debugWaveDescription", &rpwa::waveDescription::debug, &rpwa::waveDescription::setDebug)
 
-		.def("nmbAmplitudes", &rpwa::waveDescription::nmbAmplitudes);
+		.def("nmbAmplitudes", &rpwa::waveDescription::nmbAmplitudes)
+		.def("binBorders", &waveDescription_binBorders, bp::arg("nBin"));
 
 }

@@ -130,28 +130,38 @@ bool rpwa::hli::initAmplitudesKinematics(       std::vector<rpwa::isobarAmplitud
 };
 
 std::vector<rpwa::isobarAmplitudePtr> rpwa::hli::getAmplitudesFromKeyFiles(const std::vector<std::string> &keyFiles){
-	size_t nWaves = keyFiles.size();
-	std::vector<rpwa::isobarAmplitudePtr>returnValue(nWaves,rpwa::isobarAmplitudePtr());
+	size_t nKey = keyFiles.size();
+	std::vector<rpwa::isobarAmplitudePtr> returnValue = std::vector<rpwa::isobarAmplitudePtr>();
 	waveDescription description = waveDescription();
 	rpwa::isobarDecayTopologyPtr topology;
-	for (size_t wave=0;wave<nWaves;++wave){
+	unsigned int count =0;
+	for (size_t wave=0;wave<nKey;++wave){
 		description.parseKeyFile(keyFiles[wave]);
-		description.constructAmplitude(returnValue[wave]);
-		returnValue[wave]->init();
-		description.constructDecayTopology(topology);
+		int nBins = description.nmbAmplitudes();
+		for (int bin =0;bin<abs(nBins);++bin){
+			rpwa::isobarAmplitudePtr actPointer = rpwa::isobarAmplitudePtr();
+			description.constructAmplitude(actPointer,(unsigned int)bin);
+			actPointer->init();	
+			description.constructDecayTopology(topology,false,bin);
+			returnValue.push_back(actPointer);
+			count++;
+		};
 	};
 	return returnValue;
 };
 
 std::vector<std::string> rpwa::hli::waveNamesFromKeyFiles(      const std::vector<std::string>  &keyFiles){
-	size_t nWaves = keyFiles.size();
-	std::vector<std::string> names(nWaves);
+	size_t nKey = keyFiles.size();
+	std::vector<std::string> names = std::vector<std::string>();
 	waveDescription description = waveDescription();
 	rpwa::isobarDecayTopologyPtr topology;
-	for (size_t wave=0;wave<nWaves;++wave){
+	for (size_t wave=0;wave<nKey;++wave){
 		description.parseKeyFile(keyFiles[wave]);
-		description.constructDecayTopology(topology);
-		names[wave] = description.waveNameFromTopology(*topology);
+		int nBins = description.nmbAmplitudes();
+		for (int bin=0;bin<abs(nBins);++bin){
+			description.constructDecayTopology(topology,false,bin);
+			names.push_back(description.waveNameFromTopology(*topology));
+		};
 	};
 	return names;
 };

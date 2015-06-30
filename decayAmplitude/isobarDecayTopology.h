@@ -35,6 +35,8 @@
 #ifndef ISOBARDECAYTOPOLOGY_H
 #define ISOBARDECAYTOPOLOGY_H
 
+#include <string>
+
 #include "isobarDecayVertex.h"
 #include "decayTopology.h"
 
@@ -128,7 +130,8 @@ namespace rpwa {
 
 		std::vector<unsigned int> findIsobarBoseSymVertices() const;  ///< returns indices of all isobar vertices that have isobar daughters that decay into the same final state
 
-
+		bool appendToWaveNameMarker(std::string newMarker);
+		std::string waveNameMarker()const{return _waveNameMarker;};
 	protected:
 
 		isobarDecayTopology& constructDecay(const productionVertexPtr&               productionVertex,
@@ -155,6 +158,7 @@ namespace rpwa {
 		 std::vector<symTermMap>&                                     symTermMaps) const;  ///< recursive function that generates all permutation maps of indistinguishable final state particles
 
 		std::vector<isobarDecayVertexPtr> _isobarVertices;  ///< array of isobar-decay vertices excluding production vertex; ordered depth-first; this is a copy of the respective array in decayTopology
+		std::string _waveNameMarker;
 
 		static bool _debug;  ///< if set to true, debug messages are printed
 

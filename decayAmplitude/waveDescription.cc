@@ -304,7 +304,11 @@ waveDescription::constructDecayTopology(isobarDecayTopologyPtr& topo,
 	// backward compatibility: allow sloppy key files, where charges of
 	// isobars are not explicitely defined
 	topo->calcIsobarCharges();
-
+	if (nmbAmplitudes() > 0){
+		stringstream marker;
+		marker << "_bin"<<nBin;
+		topo->appendToWaveNameMarker(marker.str());
+	};
 	printSucc << "constructed decay topology from key file" << endl;
 	return true;
 }
@@ -312,7 +316,7 @@ waveDescription::constructDecayTopology(isobarDecayTopologyPtr& topo,
 
 bool
 waveDescription::constructAmplitude(isobarAmplitudePtr& amplitude,
-		                            unsigned int nBin) const
+		                            int nBin) const
 {
 	isobarDecayTopologyPtr topo;
 	if (not constructDecayTopology(topo, false, nBin)) {
@@ -393,6 +397,7 @@ waveDescription::waveNameFromTopology(isobarDecayTopology         topo,
 		         << spinQn(X.J()) << parityQn(X.P()) << parityQn(X.C()) << ","
 		         << spinQn(X.spinProj()) << parityQn(X.reflectivity()) << "]"
 		         << waveNameFromTopology(topo, topo.XIsobarDecayVertex());
+		waveName<< topo.waveNameMarker();
 	} else {
 		// recurse down decay chain
 		// first daughter
@@ -1052,17 +1057,17 @@ waveDescription::writeKeyFile(FILE&                  outStream,
 	return true;
 }
 
-unsigned int
+int
 waveDescription::nmbAmplitudes() const
 {
 	if (!_keyFileParsed){
 		printWarn<<"no keyfile parsed. assume one amplitude"<<std::endl;
-				return 1;
+				return -1; // -1 for not de-isobarred amplitude
 	}
 	const Setting& setting = _key->getRoot();
 	const Setting* deisobar  = findLibConfigGroup(setting, "de-isobar", false);
 	if (not deisobar){
-		return 1;
+		return -1;// -1 for not de-isobarred amplitude
 	}
 	const Setting* binning = findLibConfigList(*deisobar, "binning", true);
 	unsigned int nBins = binning->getLength();
@@ -1074,15 +1079,15 @@ waveDescription::nmbAmplitudes() const
 }
 
 std::pair<double,double>
-waveDescription::binBorders( unsigned int nBin) const
+waveDescription::binBorders(unsigned int nBin) const
 {
-	unsigned int nBins = nmbAmplitudes()-1;
-	if (nBins ==1){
+	int nBins = nmbAmplitudes()-1;
+	if (nBins == -1){
 		printErr<<"no de-isobarred wave"<<std::endl;
 		throw;
 	}
 
-	if (nBin > nBins){
+	if ((int)nBin > nBins){
 		printErr<<"bin index too large: "<<nBin<<" > "<<nBins<<std::endl;
 		throw;
 	}

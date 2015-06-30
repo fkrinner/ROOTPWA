@@ -86,7 +86,7 @@ namespace rpwa {
 		                            const bool              fromTemplate = false,
 		                            unsigned int            nBin = 0) const;  ///< construct isobar decay topology from keyfile
 		bool constructAmplitude(isobarAmplitudePtr& amplitude,
-				                unsigned int        nBin =0) const;  ///< construct isobar decay amplitude from keyfile
+				                int        nBin =0) const;  ///< construct isobar decay amplitude from keyfile
 		bool constructAmplitude(isobarAmplitudePtr&           amplitude,
 		                        const isobarDecayTopologyPtr& topo) const;  ///< construct isobar amplitude using existing decay topology
 
@@ -110,7 +110,7 @@ namespace rpwa {
 		static bool debug() { return _debug; }                             ///< returns debug flag
 		static void setDebug(const bool debug = true) { _debug = debug; }  ///< sets debug flag
 
-		unsigned int nmbAmplitudes() const; ///< returns number of amplitudes described by the key file
+		int nmbAmplitudes() const; ///< returns number of amplitudes described by the key file
 		std::pair<double,double> binBorders(unsigned int nBin) const;
 	private:
 

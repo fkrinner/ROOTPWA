@@ -48,14 +48,17 @@ bool isobarDecayTopology::_debug = false;
 
 isobarDecayTopology::isobarDecayTopology()
 	: decayTopology()
-{ }
+{ 
+std::cout<<"#0"<<std::endl;
+}
 
 
 isobarDecayTopology::isobarDecayTopology(const productionVertexPtr&          productionVertex,
                                          const vector<isobarDecayVertexPtr>& isobarDecayVertices,
                                          const vector<particlePtr>&          fsParticles,
                                          const bool                          performTopologyCheck)
-	: decayTopology()
+	: decayTopology(),
+	  _waveNameMarker("")
 {
 	constructDecay(productionVertex, isobarDecayVertices, fsParticles, performTopologyCheck);
 }
@@ -65,21 +68,24 @@ isobarDecayTopology::isobarDecayTopology(const productionVertexPtr&          pro
                                          const vector<interactionVertexPtr>& isobarDecayVertices,
                                          const vector<particlePtr>&          fsParticles,
                                          const bool                          performTopologyCheck)
-	: decayTopology()
+	: decayTopology(),
+	  _waveNameMarker("")
 {
 	constructDecay(productionVertex, isobarDecayVertices, fsParticles, performTopologyCheck);
 }
 
 
 isobarDecayTopology::isobarDecayTopology(const isobarDecayTopology& topo)
-	: decayTopology()
+	: decayTopology(),
+	  _waveNameMarker(topo.waveNameMarker())
 {
 	*this = topo;
 }
 
 
 isobarDecayTopology::isobarDecayTopology(const decayTopology& topo)
-	: decayTopology()
+	: decayTopology(),
+	  _waveNameMarker("")
 {
 	*this = topo;
 }
@@ -875,3 +881,8 @@ isobarDecayTopology::findIsobarBoseSymVertices() const
 	}
 	return boseSymVertices;
 }
+
+bool isobarDecayTopology::appendToWaveNameMarker(std::string newMarker){
+	_waveNameMarker+=newMarker;
+	return true;
+};

@@ -22,9 +22,9 @@ namespace {
 		return bp::make_tuple(result, topo);
 	}
 
-	bp::tuple waveDescription_constructAmplitude1(const rpwa::waveDescription& self) {
+	bp::tuple waveDescription_constructAmplitude1(const rpwa::waveDescription& self, int nBin = 0) {
 		rpwa::isobarAmplitudePtr amplitude;
-		bool result = self.constructAmplitude(amplitude);
+		bool result = self.constructAmplitude(amplitude, nBin);
 		return bp::make_tuple(result, amplitude);
 	}
 
@@ -76,7 +76,7 @@ void rpwa::py::exportWaveDescription() {
 			, bp::arg("fromTemplate")=false
 		)
 
-		.def("constructAmplitude", &waveDescription_constructAmplitude1)
+		.def("constructAmplitude", &waveDescription_constructAmplitude1, bp::arg("nBin") = 0)
 		.def("constructAmplitude", &waveDescription_constructAmplitude2)
 
 		.def(

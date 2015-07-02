@@ -7,7 +7,6 @@ import pyRootPwa
 import pyRootPwa.core
 ROOT = pyRootPwa.ROOT
 
-
 def saveFileManager(fileManagerObject, path):
 	if not os.path.isfile(path):
 		try:
@@ -348,15 +347,17 @@ class fileManager:
 			keyFileName = keyFileNames[keyFileID]
 			waveDescription = pyRootPwa.core.waveDescription()
 			waveDescription.parseKeyFile(keyFileName)
-			(success, amplitude) = waveDescription.constructAmplitude()
-			if not success:
-				pyRootPwa.utils.printErr("could not construct decay topology for key file '" + keyFileName + "'.")
-				return []
-			waveName = waveDescription.waveNameFromTopology(amplitude.decayTopology())
-			if waveName in keyFiles:
-				pyRootPwa.utils.printErr("duplicate wave name ('" + waveName + "' from files '" + keyFiles[waveName] + "' and '" + keyFileName + "'.")
-				return []
-			keyFiles[waveName] = keyFileName
+			nmbAmps = waveDescription.nmbAmplitudes() # <<<<<
+			for nAmp in range(nmbAmps): # <<<<<
+				(success, amplitude) = waveDescription.constructAmplitude(nAmp) # <<<<<
+				if not success:
+					pyRootPwa.utils.printErr("could not construct decay topology for key file '" + keyFileName + "'.")
+					return []
+				waveName = waveDescription.waveNameFromTopology(amplitude.decayTopology())
+				if waveName in keyFiles:
+					pyRootPwa.utils.printErr("duplicate wave name ('" + waveName + "' from files '" + keyFiles[waveName] + "' and '" + keyFileName + "'.")
+					return []
+				keyFiles[waveName] = (keyFileName,nAmp) # <<<<<
 		return keyFiles
 
 
@@ -428,7 +429,8 @@ class fileManager:
 	def convertKeyFilesToPaths(keyFilesList):
 		allKeyFiles = []
 		for keyFile in keyFilesList:
-			allKeyFiles.append(keyFilesList[keyFile])
+			if not keyFilesList[keyFile] in allKeyFiles: # <<<<<
+				allKeyFiles.append(keyFilesList[keyFile])
 		return allKeyFiles
 
 

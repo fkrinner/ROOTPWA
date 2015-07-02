@@ -9,7 +9,8 @@ def calcAmplitude(inputFileName,
                   keyFileName,
                   outputFileName,
                   maxNumberOfEvents = -1,
-                  printProgress = True):
+                  printProgress = True,
+                  nBin = 0):
 
 	printDebug = pyRootPwa.utils.printDebug
 	printInfo = pyRootPwa.utils.printInfo
@@ -46,7 +47,7 @@ def calcAmplitude(inputFileName,
 		return False
 	waveDescription = pyRootPwa.core.waveDescription()
 	waveDescription.parseKeyFile(keyFileName)
-	(result, amplitude) = waveDescription.constructAmplitude()
+	(result, amplitude) = waveDescription.constructAmplitude(nBin)
 	if not result:
 		printWarn("could not construct amplitude from keyfile '" + keyFileName + "'.")
 		outputFile.Close()
@@ -58,7 +59,8 @@ def calcAmplitude(inputFileName,
 		printWarn("could not initialize amplitudeFileWriter.")
 		outputFile.Close()
 		return False
-	amplitudes = pyRootPwa.core.calcAmplitude(eventMeta, amplitude, nEvents, printProgress)
+#	amplitudes = pyRootPwa.core.calcAmplitude(eventMeta, amplitude, nEvents, printProgress)
+	amplitudes = [complex(1.,0.)]
 	if not amplitudes:
 		printWarn("could not calculate amplitudes.")
 		outputFile.Close()

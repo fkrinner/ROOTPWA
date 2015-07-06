@@ -94,13 +94,18 @@ if __name__ == "__main__":
 		pyRootPwa.utils.printErr("Invalid events type given ('" + args.eventsType + "'). Aborting...")
 		sys.exit(1)
 
+	count = 0 # weg damit
+
 	for binID in binIDList:
 		for waveName in waveList:
-			nmbAmps = fileManager.getKeyFile(waveName)[1] # <<<<<
-			for nAmp in range(nmbAmps):
-				for eventsType in eventsTypes:
-					dataFile = fileManager.getDataFile(binID, eventsType)
-					if not dataFile:
-						continue
-					if not pyRootPwa.calcAmplitude(dataFile.dataFileName, fileManager.getKeyFile(waveName)[0], fileManager.getAmplitudeFilePath(binID, waveName, eventsType), args.maxNmbEvents, not args.noProgressBar, nAmp):
-						pyRootPwa.utils.printWarn("could not calculate amplitude.")
+			for eventsType in eventsTypes:
+				if binID < 100: # weg damit
+					continue # weg damit
+				if count > 1: # weg damit
+					break # weg damit
+				dataFile = fileManager.getDataFile(binID, eventsType)
+				if not dataFile:
+					continue
+				if not pyRootPwa.calcAmplitude(dataFile.dataFileName, fileManager.getKeyFile(waveName)[0], fileManager.getAmplitudeFilePath(binID, waveName, eventsType), args.maxNmbEvents, not args.noProgressBar, fileManager.getKeyFile(waveName)[1]):
+					pyRootPwa.utils.printWarn("could not calculate amplitude.")
+				count+=1 # weg damit

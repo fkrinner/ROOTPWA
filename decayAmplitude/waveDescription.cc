@@ -1062,12 +1062,12 @@ waveDescription::nmbAmplitudes() const
 {
 	if (!_keyFileParsed){
 		printWarn<<"no keyfile parsed. assume one amplitude"<<std::endl;
-				return -1; // -1 for not de-isobarred amplitude
+				return 1; // 1 for not de-isobarred amplitude
 	}
 	const Setting& setting = _key->getRoot();
 	const Setting* deisobar  = findLibConfigGroup(setting, "de-isobar", false);
 	if (not deisobar){
-		return -1;// -1 for not de-isobarred amplitude
+		return 1;// 1 for not de-isobarred amplitude
 	}
 	const Setting* binning = findLibConfigList(*deisobar, "binning", true);
 	unsigned int nBins = binning->getLength();
@@ -1081,14 +1081,14 @@ waveDescription::nmbAmplitudes() const
 std::pair<double,double>
 waveDescription::binBorders(unsigned int nBin) const
 {
-	int nBins = nmbAmplitudes()-1;
-	if (nBins == -1){
+	int nBins = nmbAmplitudes();
+	if (nBins == 1){	
 		printErr<<"no de-isobarred wave"<<std::endl;
 		throw;
 	}
 
-	if ((int)nBin > nBins){
-		printErr<<"bin index too large: "<<nBin<<" > "<<nBins<<std::endl;
+	if ((int)nBin >= nBins){
+		printErr<<"bin index too large: "<<nBin<<" >= "<<nBins<<std::endl;
 		throw;
 	}
 	if (!_keyFileParsed){

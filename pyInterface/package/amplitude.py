@@ -59,8 +59,7 @@ def calcAmplitude(inputFileName,
 		printWarn("could not initialize amplitudeFileWriter.")
 		outputFile.Close()
 		return False
-#	amplitudes = pyRootPwa.core.calcAmplitude(eventMeta, amplitude, nEvents, printProgress)
-	amplitudes = [complex(1.,0.)]
+	amplitudes = pyRootPwa.core.calcAmplitude(eventMeta, amplitude, nEvents, printProgress)
 	if not amplitudes:
 		printWarn("could not calculate amplitudes.")
 		outputFile.Close()

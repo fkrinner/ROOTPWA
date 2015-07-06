@@ -91,6 +91,7 @@ steplikeMassDependence::amp(const isobarDecayVertex& v)
 {
 	const particlePtr& parent = v.parent();
 	double mIsob = parent->lzVec().M();
+//std::cout<<_mMin<<" "<<mIsob<<" "<<_mMax<<std::endl;
 	if (mIsob>_mMin and mIsob<_mMax){
 		return complex<double>(1.,0.);
 	}

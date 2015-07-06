@@ -129,7 +129,7 @@ class fileManager:
 	def getDataFile(self, binID, eventsType):
 		internalEventsType = fileManager.eventsTypeFromBpEnum(eventsType)
 		if not internalEventsType in self.dataFiles:
-			pyRootPwa.utils.printErr("did not find data file with eventsType '" + str(eventsType) + "'.")
+			pyRootPwa.utils.printErr("did not find data file with eventsType '" + str(eventsType) + " (internal '"+str(internalEventsType)+").")
 			return False
 		for dataFile in self.dataFiles[internalEventsType]:
 			found = True
@@ -139,8 +139,10 @@ class fileManager:
 				if not self.binList[binID][binningVariable] == dataFile.binningMap[binningVariable]:
 					found = False
 					break
-			if found: return dataFile
-		pyRootPwa.utils.printWarn("no data dataFile found for binID = " + str(binID) + "and eventsType = '" + str(eventsType) + "'.")
+			if found: 
+				return dataFile
+		print "blbv::;::",self.binList[binID][binningVariable]
+		pyRootPwa.utils.printWarn("no data dataFile found for binID = " + str(binID) + " and eventsType = '" + str(eventsType) + "'.")
 		return False
 
 
@@ -429,8 +431,7 @@ class fileManager:
 	def convertKeyFilesToPaths(keyFilesList):
 		allKeyFiles = []
 		for keyFile in keyFilesList:
-			if not keyFilesList[keyFile] in allKeyFiles: # <<<<<
-				allKeyFiles.append(keyFilesList[keyFile])
+			allKeyFiles.append(keyFilesList[keyFile][0]) # <<<<<
 		return allKeyFiles
 
 

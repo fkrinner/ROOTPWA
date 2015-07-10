@@ -17,25 +17,7 @@
 #include"ampIntegralMatrix.h"
 namespace rpwa {
 	namespace hli {
-		bool getIntegralsFromKeyFiles(                                          const std::string                       integralName,
-		                                                                        const std::string                       outFileName,
-		                                                                        const std::vector<std::string>          &keyFiles, 
-		                                                                        const std::vector<std::string>          &eventFiles, 
-		                                                                        const int                               maxNmbEvents = -1);
-
-		bool getTbinnedIntegralsFromKeyFiles(                                   const std::string                       integralNameBase,
-		                                                                        const std::string                       outFileName,
-		                                                                        const std::vector<std::string>          &keyFiles,
-		                                                                        const std::vector<std::string>          &eventFiles,
-		                                                                        const std::vector<double>               &tBinning,
-		                                                                        const int                               maxNmbEvents);
-
-		
-		std::vector<rpwa::isobarAmplitudePtr> getAmplitudesFromKeyFiles(const std::vector<std::string> &keyFiles);
-		std::vector<std::string> waveNamesFromKeyFiles(const std::vector<std::string> &keyFiles);
-
 		std::vector<std::complex<double> > evaluateAmplitudes(std::vector<rpwa::isobarAmplitudePtr> &amplitudes, TClonesArray prodKinematics, TClonesArray decayKinematics);
-
 		bool initAmplitudesKinematics(std::vector<rpwa::isobarAmplitudePtr> &amplitudes, std::vector<std::string> prodNames, std::vector<std::string> decayNames);
 		bool checkBinnings(std::vector<std::map<std::string,std::pair<double, double> > > binnings);
 

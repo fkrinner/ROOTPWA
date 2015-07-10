@@ -68,6 +68,15 @@ namespace {
 	int ampIntegralMatrix_Write(const rpwa::ampIntegralMatrix& self, const char* name = 0) {
 		return self.Write(name);
 	}
+	bool ampIntegralMatrix_initialize(rpwa::ampIntegralMatrix& self,
+	                                  bp::object& namesPy){
+		std::vector<std::string> namesVector;
+		if(not rpwa::py::convertBPObjectToVector<std::string>(namesPy, namesVector)) {
+			PyErr_SetString(PyExc_TypeError, "Invalid names gotten");
+			bp::throw_error_already_set();
+		};
+		return self.initialize(namesVector);
+	};
 
 }
 
@@ -132,12 +141,14 @@ void rpwa::py::exportAmpIntegralMatrix() {
 		.def("renormalize", &rpwa::ampIntegralMatrix::renormalize)
 		.def("writeAscii", &ampIntegralMatrix_writeAscii)
 		.def("readAscii", &ampIntegralMatrix_readAscii)
+		.def("initialize", &ampIntegralMatrix_initialize)	
 
 		.def("Write", &ampIntegralMatrix_Write, bp::arg("name")=0)
 		.def("setBranchAddress", &rpwa::py::setBranchAddress<rpwa::ampIntegralMatrix*>)
 
 		.add_static_property("debugAmpIntegralMatrix", &rpwa::ampIntegralMatrix::debug, &rpwa::ampIntegralMatrix::setDebug)
 		.def_readonly("integralObjectName", &rpwa::ampIntegralMatrix::integralObjectName);
+
 
 	bp::def(
 		"getFromTDirectory"

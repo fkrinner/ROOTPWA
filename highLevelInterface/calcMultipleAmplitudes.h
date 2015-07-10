@@ -30,6 +30,7 @@ namespace rpwa {
 		                                                                        const std::vector<double>               &tBinning,
 		                                                                        const int                               maxNmbEvents);
 
+		
 		std::vector<rpwa::isobarAmplitudePtr> getAmplitudesFromKeyFiles(const std::vector<std::string> &keyFiles);
 		std::vector<std::string> waveNamesFromKeyFiles(const std::vector<std::string> &keyFiles);
 
@@ -40,10 +41,11 @@ namespace rpwa {
 
 		bool calcBinnedIntegralsFromEventTree(  const eventMetadata*                            eventMeta, 
 		                                        std::vector<isobarAmplitudePtr>                 &amplitudes, 
-		                                        std::vector<ampIntegralMatrix>                  &matrix,
+		                                        std::vector<ampIntegralMatrix*>                  &matrix,
 		                                        std::vector<std::map<std::string,std::pair<double,double> > >binning                    = std::vector<std::map<std::string,std::pair<double,double> > >(0),
 		                                        const long int                                  maxNmbEvents                            = -1, 
 		                                        const long int                                  startEvent                              =  0,
+		                                        bool                                            printProgress                           = true,
 		                                        const std::string&                              treePerfStatOutFileName                 = "", 
 		                                        const long int                                  treeCacheSize                           = 25000000);
 	};

@@ -357,7 +357,7 @@ class fileManager:
 					return []
 				waveName = waveDescription.waveNameFromTopology(amplitude.decayTopology())
 				if waveName in keyFiles:
-					pyRootPwa.utils.printErr("duplicate wave name ('" + waveName + "' from files '" + keyFiles[waveName] + "' and '" + keyFileName + "'.")
+					pyRootPwa.utils.printErr("duplicate wave name ('" + waveName + "' from files '" + keyFiles[waveName][0] + "' and '" + keyFileName + "'.")
 					return []
 				keyFiles[waveName] = (keyFileName,nAmp) # <<<<<
 		return keyFiles

@@ -39,6 +39,12 @@ namespace {
 		return bp::make_tuple(borders.first, borders.second);
 	};
 
+	std::string waveDescription_waveName(const rpwa::waveDescription& self, unsigned int nBin){
+		rpwa::isobarDecayTopologyPtr topo;
+		self.constructDecayTopology(topo, false, nBin);
+		return self.waveNameFromTopology(*topo);
+	};
+
 	bool waveDescription_writeKeyFile(const std::string& keyFileName,
 	                                  const bp::object   pyTopoOrAmp,
 							          const bool         writeProdVert = true)
@@ -109,6 +115,7 @@ void rpwa::py::exportWaveDescription() {
 		.add_static_property("debugWaveDescription", &rpwa::waveDescription::debug, &rpwa::waveDescription::setDebug)
 
 		.def("nmbAmplitudes", &rpwa::waveDescription::nmbAmplitudes)
-		.def("binBorders", &waveDescription_binBorders, bp::arg("nBin"));
+		.def("waveName", &waveDescription_waveName, (bp::arg("nBin") = 0))
+		.def("binBorders", &waveDescription_binBorders, (bp::arg("nBin") = 0));
 
 }

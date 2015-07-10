@@ -304,7 +304,7 @@ waveDescription::constructDecayTopology(isobarDecayTopologyPtr& topo,
 	// backward compatibility: allow sloppy key files, where charges of
 	// isobars are not explicitely defined
 	topo->calcIsobarCharges();
-	if (nmbAmplitudes() > 0){
+	if (nmbAmplitudes() > 1){
 		stringstream marker;
 		marker << "_bin"<<nBin;
 		topo->appendToWaveNameMarker(marker.str());

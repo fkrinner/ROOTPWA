@@ -1,9 +1,9 @@
 #include"calcMultipleAmplitudes.h"
-#include <boost/numeric/conversion/cast.hpp>
-#include"calcAmplitude.h"
+
 #include<sstream>
 
-
+#include <boost/progress.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 bool rpwa::hli::getIntegralsFromKeyFiles(                       const std::string                       integralName,
                                                                 const std::string                       outFileName,
                                                                 const std::vector<std::string>          &keyFiles, 
@@ -14,8 +14,9 @@ bool rpwa::hli::getIntegralsFromKeyFiles(                       const std::strin
 		printWarn<<"no keyFiles given, abort"<<std::endl;
 		return false;
 	};
-
 	std::vector<ampIntegralMatrix> integralMatrix = std::vector<ampIntegralMatrix>(1,ampIntegralMatrix());
+	std::vector<ampIntegralMatrix*>integralMatrixPtr;
+	integralMatrixPtr.push_back(&integralMatrix[0]);
 	std::vector<rpwa::isobarAmplitudePtr> amplitudes = getAmplitudesFromKeyFiles(keyFiles);
 	std::vector<std::string> names = waveNamesFromKeyFiles(keyFiles);
 	std::vector<double> tBinning(0);
@@ -29,10 +30,12 @@ bool rpwa::hli::getIntegralsFromKeyFiles(                       const std::strin
 		const eventMetadata* actData = eventMetadata::readEventFile(inFile);
 		int nEvents = integralMatrix[0].nmbEvents();
 		if (nEvents >= maxNmbEvents and maxNmbEvents!=-1){
+
 			break;
 		};
-		if (not calcBinnedIntegralsFromEventTree(actData, amplitudes, integralMatrix, std::vector<std::map<std::string,std::pair<double,double> > >(0), maxNmbEvents-nEvents, 0)){
+		if (not calcBinnedIntegralsFromEventTree(actData, amplitudes, integralMatrixPtr, std::vector<std::map<std::string,std::pair<double,double> > >(0), maxNmbEvents-nEvents, 0)){
 			printWarn<< "error in the integration, abort"<<std::endl;
+			throw;
 			return false;
 		};
 	};
@@ -71,6 +74,11 @@ bool rpwa::hli::getTbinnedIntegralsFromKeyFiles(                const std::strin
 	std::vector<rpwa::isobarAmplitudePtr> amplitudes = getAmplitudesFromKeyFiles(keyFiles);
 	std::vector<std::string> names = waveNamesFromKeyFiles(keyFiles);
 	integralMatrix[0].initialize(names);
+	std::vector<ampIntegralMatrix*> matrixPtrs;
+	for (size_t nn=0;nn<integralMatrix.size();++nn){
+		matrixPtrs.push_back(&integralMatrix[nn]);
+	};
+
 	if (eventFiles.size()==0){
 		printWarn<<"no eventFiles given, abort"<<std::endl;
 		return false;
@@ -82,7 +90,7 @@ bool rpwa::hli::getTbinnedIntegralsFromKeyFiles(                const std::strin
 		if (nEvents >= maxNmbEvents and maxNmbEvents!=-1){
 			break;
 		};
-		if (not calcBinnedIntegralsFromEventTree(actData, amplitudes, integralMatrix, binning , maxNmbEvents-nEvents, 0)){
+		if (not calcBinnedIntegralsFromEventTree(actData, amplitudes, matrixPtrs, binning , maxNmbEvents-nEvents, 0)){
 			printWarn<< "error in the integration, abort"<<std::endl;
 			return false;
 		};
@@ -94,7 +102,7 @@ bool rpwa::hli::getTbinnedIntegralsFromKeyFiles(                const std::strin
 		integralMatrix[b].Write(integralName.str().c_str());
 	};
 	outFile->Close();
-	integralMatrix[0].writeAscii("./integrals_new_method.txt");
+//	integralMatrix[0].writeAscii("./integrals_new_method.txt");
 	return true;
 };   
 
@@ -196,10 +204,11 @@ bool rpwa::hli::checkBinnings(std::vector<std::map<std::string,std::pair<double,
 
 bool rpwa::hli::calcBinnedIntegralsFromEventTree(       const rpwa::eventMetadata*                      eventMeta, 
                                                         std::vector<rpwa::isobarAmplitudePtr>           &amplitudes, 
-                                                        std::vector<rpwa::ampIntegralMatrix>            &matrix,
+                                                        std::vector<rpwa::ampIntegralMatrix*>           &matrix,
                                                         std::vector<std::map<std::string,std::pair<double,double> > >binning,
                                                         const long int                                  maxNmbEvents,
                                                         const long int                                  startEvent,
+							bool                                            printProgress,
                                                         const std::string&                              treePerfStatOutFileName,
                                                         const long int                                  treeCacheSize){
 
@@ -207,7 +216,7 @@ bool rpwa::hli::calcBinnedIntegralsFromEventTree(       const rpwa::eventMetadat
 	if (binning.size() == 0){
 		binned = false;
 	}else if(binning.size() != matrix.size()){
-		printErr<<"number of tbins does not correpond to the number of matrices"<<std::endl;
+		printErr<<"number of tbins ("<<binning.size()<<") does not correpond to the number of matrices ("<<matrix.size()<<")"<<std::endl;
 		return false;
 	};
 	size_t nWaves = amplitudes.size();
@@ -284,7 +293,13 @@ bool rpwa::hli::calcBinnedIntegralsFromEventTree(       const rpwa::eventMetadat
 	const long int    nmbEventsTree     = tree->GetEntries();
 	const long int    nmbEvents         = ((maxNmbEvents > 0) ? std::min(maxNmbEvents, nmbEventsTree) : nmbEventsTree);
 
+	
+	boost::progress_display* progressIndicator = (printProgress) ? new boost::progress_display(nmbEvents-startEvent, std::cout, "") : 0;
 	for(long int eventIndex = startEvent; eventIndex < nmbEvents; ++eventIndex){
+		if(progressIndicator) {
+			++(*progressIndicator);
+		};
+
 		if(tree->LoadTree(eventIndex) < 0) {
 			break;
 		};
@@ -327,15 +342,15 @@ bool rpwa::hli::calcBinnedIntegralsFromEventTree(       const rpwa::eventMetadat
 		if (binned){
 			for (size_t m=0;m<nMatrix;++m){
 				if (inBin[m]){
-					matrix[m].addEventAmplitudes(ampl);
+					matrix[m]->addEventAmplitudes(ampl);
 				};
 			};
 		}else{
-			matrix[0].addEventAmplitudes(ampl); 
+			matrix[0]->addEventAmplitudes(ampl); 
 		};
-		if (eventIndex%1000==0){
-			printInfo<<eventIndex<<std::endl;
-		};	
+//		if (eventIndex%1000==0){
+//			printInfo<<eventIndex<<std::endl;
+//		};	
 	};
 	if(treePerfStats){
 		treePerfStats->SaveAs(treePerfStatOutFileName.c_str());

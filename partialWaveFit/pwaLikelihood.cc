@@ -1073,19 +1073,6 @@ pwaLikelihood<complexT>::addAmplitude(const amplitudeMetadata& meta, const map<s
 			          << "skipping." << endl;
 			continue;
 		}
-<<<<<<< HEAD
-		assert(ampTreeLeaf->nmbIncohSubAmps() == 1);
-		complexT amp(ampTreeLeaf->incohSubAmp(0).real(), ampTreeLeaf->incohSubAmp(0).imag());
-		if (_useNormalizedAmps) {  // normalize data, if option is switched on
-			if (normInt == (value_type)0. && amp != (value_type)0.) {
-				printErr << "normalization integral for wave '" << waveName << "' is zero, but the amplitude is not. Aborting...";
-				return false;
-			}
-			if (normInt != (value_type)0.)
-				amp /= sqrt(normInt.real());  // rescale decay amplitude
-		}
-		amps.push_back(amp);
-=======
 		bool addAmplitude = true;
 		if (onTheFlyBinning) {
 			typedef map<string, pair<double, double> >::const_iterator it_type;
@@ -1110,7 +1097,6 @@ pwaLikelihood<complexT>::addAmplitude(const amplitudeMetadata& meta, const map<s
 				amp /= sqrt(normInt.real());  // rescale decay amplitude
 			amps.push_back(amp);
 		}
->>>>>>> 8d44011... not ready
 	}
 
 	unsigned int nmbEvents = amps.size();

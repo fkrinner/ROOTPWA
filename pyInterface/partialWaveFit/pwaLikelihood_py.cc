@@ -203,8 +203,6 @@ namespace {
 		return bp::list(self.CorrectParamSigns(par.data()));
 	}
 
-<<<<<<< HEAD
-=======
 
 	bp::tuple
 	pwaLikelihood_buildProdAmpArrays(rpwa::pwaLikelihood<std::complex<double> >& self,
@@ -235,8 +233,6 @@ namespace {
 	{
 		return bp::list(self.anchorWaves());
 	}
-
->>>>>>> 8d44011... not ready
 }
 
 

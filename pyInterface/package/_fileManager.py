@@ -75,10 +75,18 @@ class fileManager:
 		self.keyDirectory       = configObject.keyDirectory
 		self.amplitudeDirectory = configObject.ampDirectory
 		self.integralDirectory  = configObject.intDirectory
+		try:
+			self.binned = True
+			self.additionalBinningFile= configObject.binFile
+		except AttributeError:
+			self.binned = False
+
 		pyRootPwa.utils.printInfo("data file dir read from config file: '" + self.dataDirectory + "'.")
 		pyRootPwa.utils.printInfo("key file dir read from config file: '" + self.keyDirectory + "'.")
 		pyRootPwa.utils.printInfo("amplitude file dir read from config file: '" + self.amplitudeDirectory + "'.")
 		pyRootPwa.utils.printInfo("integral file dir read from config file: '" + self.integralDirectory + "'.")
+		if self.binned:
+			pyRootPwa.utils.printInfo("additional binning file is: '"+self.additionalBinningFile+"'.")
 
 		self.dataFiles = self._openDataFiles()
 		allAxes = []
@@ -87,6 +95,10 @@ class fileManager:
 		self.globalAxes = self._combineAxes(allAxes)
 		self.binList = self._createBinIDs()
 		self.keyFiles = self._openKeyFiles()
+
+		if self.binned:
+			self.additionalBinning = self._openAdditionalBinning()
+
 		if len(self.keyFiles) == 0:
 			pyRootPwa.utils.printErr("error loading keyfiles.")
 			return False
@@ -170,9 +182,11 @@ class fileManager:
 		return self.amplitudeDirectory + "/" + self.amplitudeFiles[(binID, waveName, fileManager.eventsTypeFromBpEnum(eventsType))]
 
 
-	def getIntegralFilePath(self, binID, eventsType):
-		return self.integralFiles[(binID, fileManager.eventsTypeFromBpEnum(eventsType))]
-
+	def getIntegralFilePath(self, binID, eventsType, additionalBinID = -1):
+		if additionalBinID == -1:
+			return self.integralFiles[(binID, fileManager.eventsTypeFromBpEnum(eventsType))]
+		else:
+			return self.integralFiles[(binID, fileManager.eventsTypeFromBpEnum(eventsType), additionalBinID)]
 
 	def getBinID(self, binInformation):
 		foundBins = []
@@ -307,8 +321,19 @@ class fileManager:
 		integralFiles = {}
 		for binID in self.getBinIDList():
 			for eventsType in [EventsType.GENERATED, EventsType.ACCEPTED]:
-				integralFiles[(binID, eventsType)] = self.integralDirectory + "/integral_binID-" + str(binID) + "_" + str(eventsType) + ".root"
+				if self.binned:
+					for additionalBinID in range(len(self.additionalBinning)):
+						additionalBin = self._getBinningString(additionalBinID)
+						integralFiles[(binID, eventsType, additionalBinID)] = self.integralDirectory + os.sep + "integral_binID-"+str(binID) + os.sep + additionalBin+"_"+str(eventsType)+".root"
+				else:
+					integralFiles[(binID, eventsType)] = self.integralDirectory + "/integral_binID-" + str(binID) + "_" + str(eventsType) + ".root"
 		return integralFiles
+
+	def _getBinningString(self,additionalBinID):
+		bin = self.additionalBinning[additionalBinID]
+		signleVariables = [key+":"+str(bin[key][0])+"-"+str(bin[key][1]) for key in bin]
+		return '_'.join(signleVariables)
+
 
 
 	def _openDataFiles(self):
@@ -362,6 +387,16 @@ class fileManager:
 				keyFiles[waveName] = (keyFileName,nAmp) # <<<<<
 		return keyFiles
 
+	def _openAdditionalBinning(self):
+		binning = []
+		with open(self.additionalBinningFile) as binningIn:
+			for line in binningIn.readlines():
+				if not line.strip() == "":
+					bin = {}
+					for chunk in line.split():
+						bin[chunk.split(';')[0]] = (float(chunk.split(';')[1]),float(chunk.split(';')[2]))
+					binning.append(bin)
+		return binning
 
 	def _createBinIDs(self):
 		binList = self._iterateBins(0, {}, [])

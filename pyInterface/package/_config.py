@@ -80,6 +80,12 @@ class rootPwaConfig:
 			pyRootPwa.utils.printErr("a required entry was missing from the config file ('" + str(exc) + "').")
 			return False
 
+		try: # Is not necessary
+			self.binFile = self.config.get("general", "binFile")
+		except  ConfigParser.Error as exc:
+			pass
+
+
 		if not os.path.isdir(self.dataDirectory):
 			os.mkdir(self.dataDirectory)
 			pyRootPwa.utils.printInfo("created data directory '" + self.dataDirectory + "'.")

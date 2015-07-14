@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
+
 import sys
+sys.path.append("/nfs/hicran/project/compass/analysis/fkrinner/ROOTPWA/build/pyLib")
 
 import pyRootPwa
 import pyRootPwa.core
@@ -57,6 +59,8 @@ if __name__ == "__main__":
 	parser.add_argument("-f", "--no-progress-bar", action="store_true", dest="noProgressBar", help="disable progress bars (decreases computing time)")
 	parser.add_argument("-k", "--keyfiles", type=str, metavar="keyfiles", dest="keyfiles", nargs="*", help="keyfiles to calculate amplitude for (overrides settings from the config file)")
 	parser.add_argument("-w", type=str, metavar="wavelistFileName", default="", dest="wavelistFileName", help="path to wavelist file (default: none)")
+	parser.add_argument("-N", type=str, metavar="waveName", default="", dest="waveName", help="wave name (default: '')")
+	parser.add_argument("-t", type=float, metavar="threshold", default = -1., dest="threshold", help="optional threshold for wave sepcified with -N")
 	args = parser.parse_args()
 
 	config = pyRootPwa.rootPwaConfig()
@@ -70,8 +74,19 @@ if __name__ == "__main__":
 		sys.exit(1)
 
 	waveList = []
+	if (not args.wavelistFileName=="" and not args.waveName == ""):
+		raise Exception("option -N and -w can't be given at the same time")
+
 	if (not args.wavelistFileName==""):
 		(waveList, waveThresholds) = readWaveList(args.wavelistFileName)
+	elif not args.waveName == "":
+		waveList = [args.waveName]
+		if args.threshold > 0.:
+			waveThresholds = [args.threshold]
+	else:
+		if args.threshold > 0.:
+			pyRootPwa.utils.printWarn("-t (threshold) only affects the wave set with -N, which is not used")
+
 	if (len(waveList) == 0):
 		waveList = fileManager.getWaveNameList()
 
@@ -94,18 +109,12 @@ if __name__ == "__main__":
 		pyRootPwa.utils.printErr("Invalid events type given ('" + args.eventsType + "'). Aborting...")
 		sys.exit(1)
 
-	count = 0 # weg damit
 
 	for binID in binIDList:
 		for waveName in waveList:
 			for eventsType in eventsTypes:
-				if binID < 100: # weg damit
-					continue # weg damit
-				if count > 1: # weg damit
-					break # weg damit
 				dataFile = fileManager.getDataFile(binID, eventsType)
 				if not dataFile:
 					continue
 				if not pyRootPwa.calcAmplitude(dataFile.dataFileName, fileManager.getKeyFile(waveName)[0], fileManager.getAmplitudeFilePath(binID, waveName, eventsType), args.maxNmbEvents, not args.noProgressBar, fileManager.getKeyFile(waveName)[1]):
 					pyRootPwa.utils.printWarn("could not calculate amplitude.")
-				count+=1 # weg damit

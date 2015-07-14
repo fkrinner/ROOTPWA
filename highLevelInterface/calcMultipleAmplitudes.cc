@@ -150,10 +150,13 @@ bool rpwa::hli::calcBinnedIntegralsFromEventTree(       const rpwa::eventMetadat
 		return false;
 	};
 	const long int    nmbEventsTree     = tree->GetEntries();
-	const long int    nmbEvents         = ((maxNmbEvents > 0) ? std::min(maxNmbEvents, nmbEventsTree) : nmbEventsTree);
+	const long int    nmbEvents         = ((maxNmbEvents > 0) ? std::min(maxNmbEvents+startEvent, nmbEventsTree) : nmbEventsTree);
 
 	
 	boost::progress_display* progressIndicator = (printProgress) ? new boost::progress_display(nmbEvents-startEvent, std::cout, "") : 0;
+
+std::cout<<"-=-=-=-=-=-=-=-="<<maxNmbEvents<<";;;"<<nmbEventsTree<<std::endl;
+	printInfo<<"integrate over eventIndex: "<<startEvent<<"-"<<nmbEvents<<std::endl;
 	for(long int eventIndex = startEvent; eventIndex < nmbEvents; ++eventIndex){
 		if(progressIndicator) {
 			++(*progressIndicator);
@@ -207,9 +210,9 @@ bool rpwa::hli::calcBinnedIntegralsFromEventTree(       const rpwa::eventMetadat
 		}else{
 			matrix[0]->addEventAmplitudes(ampl); 
 		};
-//		if (eventIndex%1000==0){
-//			printInfo<<eventIndex<<std::endl;
-//		};	
+		if ((eventIndex-startEvent)%100==0){
+			printInfo<<"integrated over "<<eventIndex-startEvent<<" events"<<std::endl;
+		};	
 	};
 	if(treePerfStats){
 		treePerfStats->SaveAs(treePerfStatOutFileName.c_str());

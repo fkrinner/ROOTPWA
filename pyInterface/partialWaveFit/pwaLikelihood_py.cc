@@ -3,6 +3,7 @@
 #include <boost/python.hpp>
 
 #include "amplitudeMetadata.h"
+#include "eventMetadata.h"
 #include "boostContainers_py.hpp"
 #include "pwaLikelihood.h"
 #include "rootConverters_py.h"
@@ -65,6 +66,31 @@ namespace {
 			bp::throw_error_already_set();
 		}
 		return self.addAccIntegral(*accMatrix, accEventsOverride);
+	}
+
+	bool
+	pwaLikelihood_addAmplitude1(rpwa::pwaLikelihood<std::complex<double> >& self,
+	                           rpwa::amplitudeMetadata*                    ampMeta)
+	{
+		return self.addAmplitude(*ampMeta);
+	}
+
+
+	bool
+	pwaLikelihood_addAmplitude2(rpwa::pwaLikelihood<std::complex<double> >& self,
+	                            rpwa::amplitudeMetadata*                    ampMeta,
+	                            bp::dict                                    pyBinningMap,
+							    rpwa::eventMetadata*                        evtMeta)
+	{
+		std::map<std::string, std::pair<double, double> >* binningMap = new std::map<std::string, std::pair<double, double> >();
+		bp::list keys = pyBinningMap.keys();
+		for(unsigned int i = 0; i < bp::len(keys); i++){
+			std::string binningVar = bp::extract<std::string>(keys[i]);
+			double lowerBound      = bp::extract<double>(pyBinningMap[binningVar][0]);
+			double upperBound      = bp::extract<double>(pyBinningMap[binningVar][1]);
+			binningMap->insert(std::pair<std::string, std::pair<double, double> >(binningVar, std::pair<double, double>(lowerBound, upperBound)));
+		}
+		return self.addAmplitude(*ampMeta, binningMap, evtMeta);
 	}
 
 
@@ -177,6 +203,40 @@ namespace {
 		return bp::list(self.CorrectParamSigns(par.data()));
 	}
 
+<<<<<<< HEAD
+=======
+
+	bp::tuple
+	pwaLikelihood_buildProdAmpArrays(rpwa::pwaLikelihood<std::complex<double> >& self,
+	                                 const bp::list&                             pyInPar,
+	                                 const bool                                  withFlat = false)
+	{
+		const unsigned int nmbPar = bp::len(pyInPar);
+		std::vector<double> inPar(nmbPar, 0);
+		for(unsigned int i = 0; i < nmbPar; ++i) {
+			inPar[i] = bp::extract<double>(pyInPar[i]);
+		}
+		std::vector<std::complex<double> > prodAmps;
+		std::vector<std::pair<int, int> >  parIndices;
+		std::vector<std::string>           prodAmpNames;
+		self.buildProdAmpArrays(inPar.data(), prodAmps, parIndices, prodAmpNames, withFlat);
+		bp::list pyParIndices;
+		for (unsigned int i = 0; i < parIndices.size(); ++i) {  // convert vector<pair<int,int> > to python type
+			std::pair<int, int> curPair = parIndices[i];
+			bp::tuple curTuple = bp::make_tuple(curPair.first, curPair.second);
+			pyParIndices.append(curTuple);
+		}
+		return bp::make_tuple(bp::list(prodAmps), pyParIndices, bp::list(prodAmpNames));
+	}
+
+
+	bp::list
+	pwaLikelihood_anchorWaves(rpwa::pwaLikelihood<std::complex<double> >& self)
+	{
+		return bp::list(self.anchorWaves());
+	}
+
+>>>>>>> 8d44011... not ready
 }
 
 
@@ -197,7 +257,8 @@ void rpwa::py::exportPwaLikelihood() {
 			, (bp::arg("accMatrix"),
 			   bp::arg("accEventsOverride") = 0)
 		)
-		.def("addAmplitude", &rpwa::pwaLikelihood<std::complex<double> >::addAmplitude)
+		.def("addAmplitude",::pwaLikelihood_addAmplitude1)
+		.def("addAmplitude",::pwaLikelihood_addAmplitude2)
 		.def("finishInit", &rpwa::pwaLikelihood<std::complex<double> >::finishInit)
 		.def("Gradient", ::pwaLikelihood_Gradient)
 		.def("FdF", ::pwaLikelihood_FdF)
@@ -219,6 +280,7 @@ void rpwa::py::exportPwaLikelihood() {
 		.def("parName", &rpwa::pwaLikelihood<std::complex<double> >::parName)
 		.def("parThreshold", &rpwa::pwaLikelihood<std::complex<double> >::parThreshold)
 		.def("parFixed", &rpwa::pwaLikelihood<std::complex<double> >::parFixed)
+		.def("anchorWaves", ::pwaLikelihood_anchorWaves)
 		.def("useNormalizedAmps", &rpwa::pwaLikelihood<std::complex<double> >::useNormalizedAmps)
 		.def("setPriorType", &rpwa::pwaLikelihood<std::complex<double> >::setPriorType)
 		.def("priorType", &rpwa::pwaLikelihood<std::complex<double> >::priorType)

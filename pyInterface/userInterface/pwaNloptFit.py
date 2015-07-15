@@ -16,8 +16,7 @@ if __name__ == "__main__":
 	parser.add_argument("outputFileName", type=str, metavar="fileName", help="path to output file")
 	parser.add_argument("-c", type=str, metavar="configFileName", dest="configFileName", default="./rootpwa.config", help="path to config file (default: './rootpwa.config')")
 	parser.add_argument("-b", type=int, metavar="#", dest="binID", default=0, help="bin ID of fit (default: 0)")
-	parser.add_argument("-B", dest="addBin", action='append', help="additional binning in the form 'binningVariable;lowerBound;upperBound' (e.g. 'mass;1000;1100')."+
-	                                                             "You can use the argument multiple times for multiple binning variables")
+	parser.add_argument("-B", type=int, metavar="addBin", dest="addBinID",default=0, help="additional bin index") 
 	parser.add_argument("-s", type=int, metavar="#", dest="seed", default=0, help="random seed (default: 0)")
 	parser.add_argument("-C", "--cauchyPriors", help="use half-Cauchy priors (default: false)", action="store_true")
 	parser.add_argument("-P", "--cauchyPriorWidth", type=float, metavar ="WIDTH", default=0.5, help="width of half-Cauchy prior (default: 0.5)")
@@ -58,19 +57,40 @@ if __name__ == "__main__":
 	binningMap = fileManager.getBinFromID(args.binID)
 	massBinCenter = (binningMap['mass'][1] + binningMap['mass'][0]) / 2.
 
-	psIntegralPath  = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.GENERATED)
+	addBinningMap = {}
+	if fileManager.binned:
+		addBinningMap = fileManager.additionalBinning[args.addBinID]
+	elif args.addBinID >0:
+		printWarn("addBin > 0, but no binning in fileManager")
+
+	if fileManager.binned:
+		psIntegralPath  = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.GENERATED, args.addBinID)
+	else:
+		psIntegralPath  = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.GENERATED)
+
 	if not args.genIntFilename == "":
 		psIntegralPath = args.genIntFilename
-	accIntegralPath = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.ACCEPTED)
+
+	if fileManager.binned:
+		accIntegralPath = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.ACCEPTED, args.addBinID)
+	else:
+		accIntegralPath = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.ACCEPTED)
+
 	if not args.accIntFilename == "":
 		accIntegralPath = args.accIntFilename
 
-	addBinningMap = pyRootPwa.utils.binningMapFromArgList(args.addBin)
-	if not addBinningMap:
-		printWarn("received no valid additional binning map argument")
+
+
+
 	eventFile = fileManager.getDataFile(args.binID, pyRootPwa.core.eventMetadata.REAL)
 	eventFileName = eventFile.dataFileName
 	printInfo("evtFile: " + eventFileName)
+
+	keyFilesWithAmpIndex = fileManager.getKeyFiles()
+	keyFiles = {}
+	for waveName in keyFilesWithAmpIndex:
+		keyFiles[waveName] = keyFilesWithAmpIndex[waveName][0]
+
 
 	fitResult = pyRootPwa.pwaNloptFit(
 	                                  ampFileList = ampFileList,
@@ -78,7 +98,7 @@ if __name__ == "__main__":
 	                                  accIntegralFileName = accIntegralPath,
 	                                  binningMap = binningMap,
 	                                  waveListFileName = args.waveListFileName,
-	                                  keyFiles = fileManager.getKeyFiles(),
+	                                  keyFiles = keyFiles,
 	                                  seed = args.seed,
 	                                  cauchy = args.cauchyPriors,
 	                                  cauchyWidth = args.cauchyPriorWidth,

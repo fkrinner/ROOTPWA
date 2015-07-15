@@ -78,7 +78,6 @@ def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, w
 		printErr("could not initialize likelihood. Aborting...")
 		return False
 
-	print "{}{}{}{}{}{}{}",normIntegralFileName
 	normIntFile = ROOT.TFile.Open(normIntegralFileName, "READ")
 	if len(normIntFile.GetListOfKeys()) != 1:
 		pyRootPwa.utils.printWarn("'" + normIntegralFileName + "' does not contain exactly one TKey.")

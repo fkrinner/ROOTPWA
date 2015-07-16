@@ -1029,14 +1029,42 @@ template<typename complexT>
 bool
 pwaLikelihood<complexT>::addAmplitude(const amplitudeMetadata& meta, const map<string, pair<double, double> >* binningMap, const eventMetadata* evtMeta)
 {
+	if (not binningMap == 0 and evtMeta == 0){
+		printErr << "eventMetadata not set. Aborting..." << endl;
+		return false;
+	};
+	const std::vector<const amplitudeMetadata*> metas(1,&meta);
+	if (evtMeta == 0){
+		return addAmplitude(metas, binningMap);
+	};
+	const std::vector<const eventMetadata*> evtMetas = std::vector<const eventMetadata*>(1,evtMeta);
+	return addAmplitude(metas, binningMap, evtMetas);
+};
+
+template<typename complexT>
+bool 
+pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMetadata*> &metas, const std::map<std::string, std::pair<double,double> >* binningMap, const std::vector<const eventMetadata*> &evtMetas)
+{
+
 	if (not _accIntAdded) {
 		printErr << "acceptance integral not added!" << endl
 		         << "call pwaLikelihood::addAccIntegral() before pwaLikelihood::addAmplitude()" << endl
 		         << "Aborting..." << endl;
 		return false;
 	}
+	if (metas.size() == 0){
+		printErr<<"no amplitude file given"<<std::endl;
+		return false;
+	};
+	const unsigned int nFiles = metas.size();
+	const string waveName = metas[0]->objectBaseName();
+	for (size_t file = 1;file<nFiles;++file){
+		if (waveName != metas[file]->objectBaseName()){
+			printErr<<"different waveNames in the files, abort"<<std::endl;
+			return false;
+		};
+	};
 
-	const string waveName = meta.objectBaseName();
 	if (_waveParams.count(waveName) == 0) {
 		printErr << "requested to add decay amplitudes for wave '" << waveName << "' which is not in wavelist. Aborting..." << endl;
 		return false;
@@ -1047,58 +1075,65 @@ pwaLikelihood<complexT>::addAmplitude(const amplitudeMetadata& meta, const map<s
 	// get normalization
 	const complexT normInt = _normMatrix[refl][waveIndex][refl][waveIndex];
 
-	// connect tree leaf
-	amplitudeTreeLeaf* ampTreeLeaf = 0;
-	meta.amplitudeTree()->SetBranchAddress(amplitudeMetadata::amplitudeLeafName.c_str(), &ampTreeLeaf);
 	vector<complexT> amps;
 	const bool onTheFlyBinning = ((binningMap == 0) ? false : true);
-	map<string, double> additionalLeaves;
-	if (onTheFlyBinning) {
-		if (evtMeta == 0) {
-			printErr << "eventMetadata not set. Aborting..." << endl;
-		}
-		meta.amplitudeTree()->AddFriend(evtMeta->eventTree(), "evtTree");
-		typedef map<string, pair<double, double> >::const_iterator it_type;
-		for(it_type iterator = binningMap->begin(); iterator != binningMap->end(); iterator++) {
-			string additionalVar = iterator->first;
-			additionalLeaves.insert(pair<string, double>(additionalVar, 0.));
-			printInfo << "setbranchaddress to " << additionalVar << endl;
-			meta.amplitudeTree()->SetBranchAddress(additionalVar.c_str(), &additionalLeaves[additionalVar]);
-		}
-	}
-	for (long int eventIndex = 0; eventIndex < meta.amplitudeTree()->GetEntriesFast(); ++eventIndex) {
-		meta.amplitudeTree()->GetEntry(eventIndex);
-		if (!ampTreeLeaf) {
-			printWarn << "null pointer to amplitude leaf for event " << eventIndex << ". "
-			          << "skipping." << endl;
-			continue;
-		}
-		bool addAmplitude = true;
+	if (onTheFlyBinning and metas.size() != evtMetas.size()){
+		printErr<<"metas.size() and evtMetas.size() do not match"<<std::endl;
+		return false;
+	};
+
+	// connect tree leaf
+	for (size_t file=0; file<nFiles;++file){
+		amplitudeTreeLeaf* ampTreeLeaf = 0;
+		metas[file]->amplitudeTree()->SetBranchAddress(amplitudeMetadata::amplitudeLeafName.c_str(), &ampTreeLeaf);
+		map<string, double> additionalLeaves;
 		if (onTheFlyBinning) {
+			if (evtMetas[file] == 0) {
+				printErr << "eventMetadata not set. Aborting..." << endl;
+				return false;
+			}
+			metas[file]->amplitudeTree()->AddFriend(evtMetas[file]->eventTree(), "evtTree");
 			typedef map<string, pair<double, double> >::const_iterator it_type;
 			for(it_type iterator = binningMap->begin(); iterator != binningMap->end(); iterator++) {
 				string additionalVar = iterator->first;
-				double lowerBound = iterator->second.first;
-				double upperBound = iterator->second.second;
-				double addVarValue = additionalLeaves[additionalVar];
-				if (addVarValue < lowerBound or addVarValue > upperBound) {
-//					printWarn << additionalVar << ": " << addVarValue << " is not in (" << lowerBound << "," << upperBound << ")?" << endl;
-					addAmplitude = false;
-				}
-				else {
-//					printSucc << additionalVar << ": " << addVarValue << " is in (" << lowerBound << "," << upperBound << ")?" << endl;
-				}
+				additionalLeaves.insert(pair<string, double>(additionalVar, 0.));
+				printInfo << "setbranchaddress to " << additionalVar << endl;
+				metas[file]->amplitudeTree()->SetBranchAddress(additionalVar.c_str(), &additionalLeaves[additionalVar]);
 			}
 		}
-		if (addAmplitude) {
-			assert(ampTreeLeaf->nmbIncohSubAmps() == 1);
-			complexT amp(ampTreeLeaf->incohSubAmp(0).real(), ampTreeLeaf->incohSubAmp(0).imag());
-			if (_useNormalizedAmps)         // normalize data, if option is switched on
-				amp /= sqrt(normInt.real());  // rescale decay amplitude
-			amps.push_back(amp);
+		for (long int eventIndex = 0; eventIndex < metas[file]->amplitudeTree()->GetEntriesFast(); ++eventIndex) {
+			metas[file]->amplitudeTree()->GetEntry(eventIndex);
+			if (!ampTreeLeaf) {
+				printWarn << "null pointer to amplitude leaf for event " << eventIndex << ". "
+					  << "skipping." << endl;
+				continue;
+			}
+			bool addAmplitude = true;
+			if (onTheFlyBinning) {
+				typedef map<string, pair<double, double> >::const_iterator it_type;
+				for(it_type iterator = binningMap->begin(); iterator != binningMap->end(); iterator++) {
+					string additionalVar = iterator->first;
+					double lowerBound = iterator->second.first;
+					double upperBound = iterator->second.second;
+					double addVarValue = additionalLeaves[additionalVar];
+					if (addVarValue < lowerBound or addVarValue > upperBound) {
+	//					printWarn << additionalVar << ": " << addVarValue << " is not in (" << lowerBound << "," << upperBound << ")?" << endl;
+						addAmplitude = false;
+					}
+					else {
+	//					printSucc << additionalVar << ": " << addVarValue << " is in (" << lowerBound << "," << upperBound << ")?" << endl;
+					}
+				}
+			}
+			if (addAmplitude) {
+				assert(ampTreeLeaf->nmbIncohSubAmps() == 1);
+				complexT amp(ampTreeLeaf->incohSubAmp(0).real(), ampTreeLeaf->incohSubAmp(0).imag());
+				if (_useNormalizedAmps)         // normalize data, if option is switched on
+					amp /= sqrt(normInt.real());  // rescale decay amplitude
+				amps.push_back(amp);
+			}
 		}
-	}
-
+	};
 	unsigned int nmbEvents = amps.size();
 	if (nmbEvents == 0) {
 		printErr << "could not read amplitudes for wave '" << waveName << "'. Aborting..." << endl;

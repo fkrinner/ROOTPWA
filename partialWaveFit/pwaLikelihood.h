@@ -182,6 +182,8 @@ namespace rpwa {
 		bool addAccIntegral(rpwa::ampIntegralMatrix& accMatrix, unsigned int accEventsOverride = 0);
 
 		bool addAmplitude(const rpwa::amplitudeMetadata& meta, const std::map<std::string, std::pair<double, double> >* binningMap = 0, const eventMetadata* evtMeta = 0);
+		bool addAmplitude(const std::vector<const rpwa::amplitudeMetadata*> &metas, const std::map<std::string, std::pair<double,double> >* binningMap =0, const std::vector<const eventMetadata*> &evtMetas = std::vector<const eventMetadata*>(0));
+
 
 		std::map<std::string, std::pair<double, double> > compareBinningMaps(const std::map<std::string, std::pair<double, double> >& base, const std::map<std::string, std::pair<double, double> >& moreBins);
 

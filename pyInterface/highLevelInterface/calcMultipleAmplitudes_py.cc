@@ -70,6 +70,4 @@ void rpwa::py::exportCalcMultipleAmplitudes(){
 		   bp::arg("treePerfStatOutFileName") = "",
 		   bp::arg("treeCacheSize") = 25000000)
 	);
-
-	bp::register_ptr_to_python<rpwa::isobarAmplitudePtr>();
 };

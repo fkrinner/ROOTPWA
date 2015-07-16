@@ -17,6 +17,7 @@ if __name__ == "__main__":
 	parser.add_argument("-c", type=str, metavar="configFileName", dest="configFileName", default="./rootpwa.config", help="path to config file (default: './rootpwa.config')")
 	parser.add_argument("-n", type=int, metavar="#", dest="nEvents", default=-1, help="maximum number of events to process (default: all)")
 	parser.add_argument("-b", type=int, metavar="massBin", default=-1, dest="massBin", help="mass bin to be calculated (default: all)")
+	parser.add_argument("-B", type=int, metavar="addBinID", default=-1, dest="addBinID", help="additionalBinID")
 	parser.add_argument("-e", type=str, metavar="eventsType", default="all", dest="eventsType", help="events type to be calculated ('real', 'generated' or 'accepted', default: all)")
 	parser.add_argument("-w", type=str, metavar="path", dest="weightsFileName", default="", help="path to MC weight file for de-weighting (default: none)")
 	parser.add_argument("-s", type=int, metavar="startEvent", default=0, dest="startEvent", help="event index to start integration (default: 0)")
@@ -74,6 +75,11 @@ if __name__ == "__main__":
 		binnings =  fileManager.additionalBinning
 	except AttributeError:
 		binnings = [] 
+
+	if args.addBinID > -1:
+		if len(binnings) == 0:
+			raise Exception("addBinID given, but no additional binning found")
+		binnings=[binnings[args.addBinID]]
 
 	integrals = []
 	if len(binnings) == 0:

@@ -80,7 +80,7 @@ namespace {
 	pwaLikelihood_addAmplitude2(rpwa::pwaLikelihood<std::complex<double> >& self,
 	                            rpwa::amplitudeMetadata*                    ampMeta,
 	                            bp::dict                                    pyBinningMap,
-							    rpwa::eventMetadata*                        evtMeta)
+	                            rpwa::eventMetadata*                        evtMeta)
 	{
 		std::map<std::string, std::pair<double, double> >* binningMap = new std::map<std::string, std::pair<double, double> >();
 		bp::list keys = pyBinningMap.keys();
@@ -93,6 +93,44 @@ namespace {
 		return self.addAmplitude(*ampMeta, binningMap, evtMeta);
 	}
 
+	bool
+	pwaLikelihood_addAmplitude3(rpwa::pwaLikelihood<std::complex<double> >& self,
+	                             bp::list                                    pyMetas,
+	                             bp::dict                                    pyBinningMap,
+	                             bp::list                                    pyEvtMetas)
+	{
+		std::vector<const rpwa::amplitudeMetadata*> metas; 
+		if (not rpwa::py::convertBPObjectToVector<const rpwa::amplitudeMetadata*>(pyMetas, metas)){
+			PyErr_SetString(PyExc_TypeError, "could not extract amplitudes metadatas");
+			bp::throw_error_already_set();
+		};
+		std::map<std::string, std::pair<double, double> >* binningMap = new std::map<std::string, std::pair<double, double> >();
+		bp::list keys = pyBinningMap.keys();
+		for(unsigned int i = 0; i < bp::len(keys); i++){
+			std::string binningVar = bp::extract<std::string>(keys[i]);
+			double lowerBound      = bp::extract<double>(pyBinningMap[binningVar][0]);
+			double upperBound      = bp::extract<double>(pyBinningMap[binningVar][1]);
+			binningMap->insert(std::pair<std::string, std::pair<double, double> >(binningVar, std::pair<double, double>(lowerBound, upperBound)));
+		};
+		std::vector<const rpwa::eventMetadata*> evtMetas; 
+		if (not rpwa::py::convertBPObjectToVector<const rpwa::eventMetadata*>(pyEvtMetas, evtMetas)){
+			PyErr_SetString(PyExc_TypeError, "could not extract event metadatas");
+			bp::throw_error_already_set();
+		};
+		return self.addAmplitude(metas, binningMap, evtMetas);
+	};
+
+	bool
+	pwaLikelihood_addAmplitude4(rpwa::pwaLikelihood<std::complex<double> >& self,
+	                             bp::list                                   pyMetas)
+	{
+		std::vector<const rpwa::amplitudeMetadata*> metas; 
+		if (not rpwa::py::convertBPObjectToVector<const rpwa::amplitudeMetadata*>(pyMetas, metas)){
+			PyErr_SetString(PyExc_TypeError, "could not extract amplitudes metadatas");
+			bp::throw_error_already_set();
+		};
+		return self.addAmplitude(metas);
+	};
 
 	bp::list
 	pwaLikelihood_Gradient(rpwa::pwaLikelihood<std::complex<double> >& self,
@@ -255,6 +293,9 @@ void rpwa::py::exportPwaLikelihood() {
 		)
 		.def("addAmplitude",::pwaLikelihood_addAmplitude1)
 		.def("addAmplitude",::pwaLikelihood_addAmplitude2)
+		.def("addAmplitude",::pwaLikelihood_addAmplitude3)
+		.def("addAmplitude",::pwaLikelihood_addAmplitude4)
+
 		.def("finishInit", &rpwa::pwaLikelihood<std::complex<double> >::finishInit)
 		.def("Gradient", ::pwaLikelihood_Gradient)
 		.def("FdF", ::pwaLikelihood_FdF)

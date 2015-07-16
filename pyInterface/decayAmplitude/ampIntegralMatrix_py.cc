@@ -34,14 +34,16 @@ namespace {
 	                                                const unsigned int waveIndexI,
 	                                                const unsigned int waveIndexJ)
 	{
-		return self.element(waveIndexI, waveIndexJ);
+		std::complex<double> returnValue = self.element(waveIndexI, waveIndexJ);
+		return returnValue;
 	}
 
 	std::complex<double> ampIntegralMatrix_element2(const rpwa::ampIntegralMatrix& self,
 	                                                const std::string& waveNameI,
 	                                                const std::string& waveNameJ)
 	{
-		return self.element(waveNameI, waveNameJ);
+		std::complex<double> returnValue = self.element(waveNameI, waveNameJ);
+		return returnValue;
 	}
 
 	bool ampIntegralMatrix_integrate(rpwa::ampIntegralMatrix& self,
@@ -72,7 +74,7 @@ namespace {
 	                                  bp::object& namesPy){
 		std::vector<std::string> namesVector;
 		if(not rpwa::py::convertBPObjectToVector<std::string>(namesPy, namesVector)) {
-			PyErr_SetString(PyExc_TypeError, "Invalid names gotten");
+			PyErr_SetString(PyExc_TypeError, "invalid names gotten");
 			bp::throw_error_already_set();
 		};
 		return self.initialize(namesVector);
@@ -155,5 +157,4 @@ void rpwa::py::exportAmpIntegralMatrix() {
 		, &rpwa::py::getFromTDirectory<rpwa::ampIntegralMatrix>
 		, bp::return_value_policy<bp::manage_new_object>()
 	);
-
 }

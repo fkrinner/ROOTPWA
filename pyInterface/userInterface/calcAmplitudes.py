@@ -116,5 +116,5 @@ if __name__ == "__main__":
 				dataFile = fileManager.getDataFile(binID, eventsType)
 				if not dataFile:
 					continue
-				if not pyRootPwa.calcAmplitude(dataFile.dataFileName, fileManager.getKeyFile(waveName)[0], fileManager.getAmplitudeFilePath(binID, waveName, eventsType), args.maxNmbEvents, not args.noProgressBar, fileManager.getKeyFile(waveName)[1]):
+				if not pyRootPwa.calcAmplitude(dataFile.dataFileName, fileManager.getKeyFile(waveName)[0], fileManager.getAmplitudeFilePath(binID, waveName, eventsType), args.maxNmbEvents, not args.noProgressBar, fileManager.getKeyFile(waveName)[1], wasteZeros = True):
 					pyRootPwa.utils.printWarn("could not calculate amplitude.")

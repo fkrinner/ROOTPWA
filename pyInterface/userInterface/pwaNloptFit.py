@@ -50,13 +50,28 @@ if __name__ == "__main__":
 		printErr("loading the file manager failed. Aborting...")
 		sys.exit(1)
 
-	ampFileList = fileManager.getAmplitudeFilePaths(args.binID, pyRootPwa.core.eventMetadata.REAL)
-	if not ampFileList:
-		printErr("could not retrieve valid amplitude file list. Aborting...")
-		sys.exit(1)
-	binningMap = fileManager.getBinFromID(args.binID)
-	massBinCenter = (binningMap['mass'][1] + binningMap['mass'][0]) / 2.
+	binIDs = [args.binID]
 
+	mMax = 0.
+	mMin = float("inf")
+
+	ampFileList = {}	
+
+	for binID in binIDs:
+		ampFileListBin = fileManager.getAmplitudeFilePaths(binID, pyRootPwa.core.eventMetadata.REAL)
+		if not ampFileListBin:
+			printErr("could not retrieve valid amplitude file list. Aborting...")
+			sys.exit(1)
+		for key in ampFileListBin:
+			if not ampFileList.has_key(key):
+				ampFileList[key] = []
+			ampFileList[key].append(ampFileListBin[key])
+
+		binningMap = fileManager.getBinFromID(args.binID)
+		mMin = min(mMin, binningMap['mass'][0])
+		mMax = max(mMax, binningMap['mass'][1])
+	
+	massBinCenter = (mMin+mMax) / 2.
 	addBinningMap = {}
 	if fileManager.binned:
 		addBinningMap = fileManager.additionalBinning[args.addBinID]
@@ -79,12 +94,12 @@ if __name__ == "__main__":
 	if not args.accIntFilename == "":
 		accIntegralPath = args.accIntFilename
 
-
-
-
-	eventFile = fileManager.getDataFile(args.binID, pyRootPwa.core.eventMetadata.REAL)
-	eventFileName = eventFile.dataFileName
-	printInfo("evtFile: " + eventFileName)
+	eventFileNames = []
+	for binID in binIDs:
+		eventFile = fileManager.getDataFile(binID, pyRootPwa.core.eventMetadata.REAL)
+		eventFileName = eventFile.dataFileName
+		eventFileNames.append(eventFileName)
+		printInfo("evtFile: " + eventFileName)
 
 	keyFilesWithAmpIndex = fileManager.getKeyFiles()
 	keyFiles = {}
@@ -109,35 +124,52 @@ if __name__ == "__main__":
 	                                  rank = args.rank,
 	                                  verbose = args.verbose,
 	                                  addBinningMap = addBinningMap,
-	                                  evtFileName = eventFileName
+	                                  evtFileNameList = eventFileNames
 	                                  )
+
 	if (not fitResult):
 		printErr("didn't get a valid fit result. Aborting...")
 		sys.exit(1)
 	printInfo("writing result to '" + args.outputFileName + "'")
 	valTreeName   = "pwa"
 	valBranchName = "fitResult_v2"
-	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "UPDATE")
+
+	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "RECREATE")
 	if ((not outputFile) or outputFile.IsZombie()):
 		printErr("cannot open output file '" + args.outputFileName + "'. Aborting...")
 		sys.exit(1)
-	tree = outputFile.Get(valTreeName)
-	if (not tree):
-		printInfo("file '" + args.outputFileName + "' is empty. "
-		        + "creating new tree '" + valTreeName + "' for PWA result.")
-		tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
-		if not fitResult.branch(tree, valBranchName):
-			printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
-			sys.exit(1)
-	else:
-		fitResult.setBranchAddress(tree, valBranchName)
-	tree.Fill()
-	nmbBytes = tree.Write()
+	fitResult.Write("pwa")
 	outputFile.Close()
-	if nmbBytes == 0:
-		printErr("problems writing integral to TKey 'fitResult' "
-		       + "in file '" + args.outputFileName + "'")
-		sys.exit(1)
-	else:
-		printSucc("wrote integral to TKey 'fitResult' "
-		        + "in file '" + args.outputFileName + "'")
+
+	
+	if False:
+		if (not fitResult):
+			printErr("didn't get a valid fit result. Aborting...")
+			sys.exit(1)
+		printInfo("writing result to '" + args.outputFileName + "'")
+		valTreeName   = "pwa"
+		valBranchName = "fitResult_v2"
+		outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "UPDATE")
+		if ((not outputFile) or outputFile.IsZombie()):
+			printErr("cannot open output file '" + args.outputFileName + "'. Aborting...")
+			sys.exit(1)
+		tree = outputFile.Get(valTreeName)
+		if (not tree):
+			printInfo("file '" + args.outputFileName + "' is empty. "
+				+ "creating new tree '" + valTreeName + "' for PWA result.")
+			tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
+			if not fitResult.branch(tree, valBranchName):
+				printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
+				sys.exit(1)
+		else:
+			fitResult.setBranchAddress(tree, valBranchName)
+		tree.Fill()
+		nmbBytes = tree.Write()
+		outputFile.Close()
+		if nmbBytes == 0:
+			printErr("problems writing integral to TKey 'fitResult' "
+			       + "in file '" + args.outputFileName + "'")
+			sys.exit(1)
+		else:
+			printSucc("wrote integral to TKey 'fitResult' "
+				+ "in file '" + args.outputFileName + "'")

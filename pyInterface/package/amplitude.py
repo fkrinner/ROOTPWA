@@ -10,7 +10,8 @@ def calcAmplitude(inputFileName,
                   outputFileName,
                   maxNumberOfEvents = -1,
                   printProgress = True,
-                  nBin = 0):
+                  nBin = 0,
+                  wasteZeros = False):
 
 	printDebug = pyRootPwa.utils.printDebug
 	printInfo = pyRootPwa.utils.printInfo
@@ -53,12 +54,6 @@ def calcAmplitude(inputFileName,
 		outputFile.Close()
 		return False
 
-	ampFileWriter = pyRootPwa.core.amplitudeFileWriter()
-	objectBaseName = waveDescription.waveNameFromTopology(amplitude.decayTopology())
-	if not ampFileWriter.initialize(outputFile, [eventMeta], waveDescription.keyFileContent(), objectBaseName):
-		printWarn("could not initialize amplitudeFileWriter.")
-		outputFile.Close()
-		return False
 	amplitudes = pyRootPwa.core.calcAmplitude(eventMeta, amplitude, nEvents, printProgress)
 	if not amplitudes:
 		printWarn("could not calculate amplitudes.")
@@ -67,6 +62,23 @@ def calcAmplitude(inputFileName,
 	if nEvents != len(amplitudes):
 		printWarn("number of events (" + str(nEvents) +
 		          ") does not match with number of amplitudes (" + str(len(amplitudes)) + ").")
+		return False
+	if wasteZeros:
+		foundNonZero = False
+		for amp in amplitudes:
+			if not amp.real()**2 + amp.imag()**2 == 0.:
+				foundNonZero = True
+				break
+		if not foundNonZero:
+			printWarn("did not find any nonzero amplitudes, do not write")
+			return False
+
+
+	ampFileWriter = pyRootPwa.core.amplitudeFileWriter()
+	objectBaseName = waveDescription.waveNameFromTopology(amplitude.decayTopology())
+	if not ampFileWriter.initialize(outputFile, [eventMeta], waveDescription.keyFileContent(), objectBaseName):
+		printWarn("could not initialize amplitudeFileWriter.")
+		outputFile.Close()
 		return False
 	ampFileWriter.addAmplitudes(amplitudes)
 	if not ampFileWriter.finalize():

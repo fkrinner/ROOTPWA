@@ -61,7 +61,7 @@ def readWaveList(waveListFileName, keyFiles):
 # }
 
 
-def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileName=""):
+def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[]):
 	waveDescThres = readWaveList(waveListFileName, keyFiles)
 	massBinCenter = (binningMap['mass'][1] + binningMap['mass'][0]) / 2. # YOU CAN DO BETTER
 
@@ -96,18 +96,8 @@ def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, w
 		pyRootPwa.utils.printErr("could not add acceptance integral. Aborting...")
 		return False
 	accIntFile.Close()
-
-	for wave in waveDescThres:
-		waveName = wave[0]
-		ampFileName = ampFileList[waveName]
-		ampFile = ROOT.TFile.Open(ampFileName, "READ")
-		if not ampFile:
-			pyRootPwa.utils.printErr("could not open amplitude file '" + ampFileName + "'.")
-			return False
-		ampMeta = pyRootPwa.core.amplitudeMetadata.readAmplitudeFile(ampFile, waveName)
-		if not ampMeta:
-			pyRootPwa.utils.printErr("could not get metadata for waveName '" + waveName + "'.")
-			return False
+	eventMetas = []
+	for evtFileName in evtFileNameList:
 		evtFile = ROOT.TFile.Open(evtFileName, "READ")
 		if not evtFile:
 			pyRootPwa.utils.printErr("could not open amplitude file '" + evtFileName + "'.")
@@ -116,7 +106,25 @@ def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, w
 		if not evtMeta:
 			pyRootPwa.utils.printErr("could not get metadata for event file '" + evtFileName + "'.")
 			return False
-		if (not likelihood.addAmplitude(ampMeta, addBinningMap, evtMeta)):
+		eventMetas.append(evtMeta)
+	for wave in waveDescThres:
+		waveName = wave[0]
+		ampFileNameList = ampFileList[waveName]
+		if not len(ampFileNameList) == len(eventMetas) and len(eventMetas) > 0:
+			pyRootPwa.utils.printErr("number of amplitude and event files do not match")
+			return False
+		ampMetas = []
+		for iFile, ampFileName in enumerate(ampFileNameList):
+			ampFile = ROOT.TFile.Open(ampFileName, "READ")
+			if not ampFile:
+				pyRootPwa.utils.printErr("could not open amplitude file '" + ampFileName + "'.")
+				return False
+			ampMeta = pyRootPwa.core.amplitudeMetadata.readAmplitudeFile(ampFile, waveName)
+			if not ampMeta:
+				pyRootPwa.utils.printErr("could not get metadata for waveName '" + waveName + "'.")
+				return False
+			ampMetas.append(ampMeta)
+		if (not likelihood.addAmplitude(ampMetas, addBinningMap, eventMetas)):
 			pyRootPwa.utils.printErr("could not add amplitude '" + waveName + "'. Aborting...")
 			return False
 	if (not likelihood.finishInit()):
@@ -135,7 +143,7 @@ def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, w
 	return fitResult
 
 
-def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileName=""):
+def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[]):
 	waveDescThres = readWaveList(waveListFileName, keyFiles)
 	massBinCenter = (binningMap['mass'][1] + binningMap['mass'][0]) / 2. # YOU CAN DO BETTER
 
@@ -170,18 +178,8 @@ def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningM
 		pyRootPwa.utils.printErr("could not add acceptance integral. Aborting...")
 		return False
 	accIntFile.Close()
-
-	for wave in waveDescThres:
-		waveName = wave[0]
-		ampFileName = ampFileList[waveName]
-		ampFile = ROOT.TFile.Open(ampFileName, "READ")
-		if not ampFile:
-			pyRootPwa.utils.printErr("could not open amplitude file '" + ampFileName + "'.")
-			return False
-		ampMeta = pyRootPwa.core.amplitudeMetadata.readAmplitudeFile(ampFile, waveName)
-		if not ampMeta:
-			pyRootPwa.utils.printErr("could not get metadata for waveName '" + waveName + "'.")
-			return False
+	eventMetas = []
+	for evtFileName in evtFileNameList:
 		evtFile = ROOT.TFile.Open(evtFileName, "READ")
 		if not evtFile:
 			pyRootPwa.utils.printErr("could not open amplitude file '" + evtFileName + "'.")
@@ -190,7 +188,25 @@ def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningM
 		if not evtMeta:
 			pyRootPwa.utils.printErr("could not get metadata for event file '" + evtFileName + "'.")
 			return False
-		if (not likelihood.addAmplitude(ampMeta, addBinningMap, evtMeta)):
+		eventMetas.append(evtMeta)
+	for wave in waveDescThres:
+		waveName = wave[0]
+		ampFileNameList = ampFileList[waveName]
+		if not len(ampFileNameList) == len(eventMetas) and len(eventMetas) > 0:
+			pyRootPwa.utils.printErr("number of amplitude and event files do not match")
+			return False
+		ampMetas = []
+		for iFile, ampFileName in enumerate(ampFileNameList):
+			ampFile = ROOT.TFile.Open(ampFileName, "READ")
+			if not ampFile:
+				pyRootPwa.utils.printErr("could not open amplitude file '" + ampFileName + "'.")
+				return False
+			ampMeta = pyRootPwa.core.amplitudeMetadata.readAmplitudeFile(ampFile, waveName)
+			if not ampMeta:
+				pyRootPwa.utils.printErr("could not get metadata for waveName '" + waveName + "'.")
+				return False
+			ampMetas.append(ampMeta)
+		if (not likelihood.addAmplitude(ampMetas, addBinningMap, eventMetas)):
 			pyRootPwa.utils.printErr("could not add amplitude '" + waveName + "'. Aborting...")
 			return False
 	if (not likelihood.finishInit()):

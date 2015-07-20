@@ -37,23 +37,10 @@ def calcAmplitude(inputFileName,
 	nEvents = eventMeta.eventTree().GetEntries()
 	if maxNumberOfEvents > 0:
 		nEvents = min(nEvents, maxNumberOfEvents)
-	outputFile = ROOT.TFile.Open(outputFileName, "NEW")
-	if not outputFile:
-		printWarn("could not open output file '" + outputFileName + "'.")
-		return False
 
-	if not _os.path.isfile(keyFileName):
-		printWarn("key file '" + keyFileName + "' not found.")
-		outputFile.Close()
-		return False
 	waveDescription = pyRootPwa.core.waveDescription()
 	waveDescription.parseKeyFile(keyFileName)
 	(result, amplitude) = waveDescription.constructAmplitude(nBin)
-	if not result:
-		printWarn("could not construct amplitude from keyfile '" + keyFileName + "'.")
-		outputFile.Close()
-		return False
-
 	amplitudes = pyRootPwa.core.calcAmplitude(eventMeta, amplitude, nEvents, printProgress)
 	if not amplitudes:
 		printWarn("could not calculate amplitudes.")
@@ -66,12 +53,29 @@ def calcAmplitude(inputFileName,
 	if wasteZeros:
 		foundNonZero = False
 		for amp in amplitudes:
-			if not amp.real()**2 + amp.imag()**2 == 0.:
+			if not amp.real**2 + amp.imag**2 == 0.:
 				foundNonZero = True
 				break
 		if not foundNonZero:
 			printWarn("did not find any nonzero amplitudes, do not write")
 			return False
+
+
+	outputFile = ROOT.TFile.Open(outputFileName, "NEW")
+	if not outputFile:
+		printWarn("could not open output file '" + outputFileName + "'.")
+		return False
+
+	if not _os.path.isfile(keyFileName):
+		printWarn("key file '" + keyFileName + "' not found.")
+		outputFile.Close()
+		return False
+
+	if not result:
+		printWarn("could not construct amplitude from keyfile '" + keyFileName + "'.")
+		outputFile.Close()
+		return False
+
 
 
 	ampFileWriter = pyRootPwa.core.amplitudeFileWriter()

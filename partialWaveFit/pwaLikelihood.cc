@@ -1057,6 +1057,13 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 		return false;
 	};
 	const unsigned int nFiles = metas.size();
+	for (size_t file=0;file<nFiles;++file){
+		if (metas[file] == 0 or evtMetas[file] == 0){
+			printErr<<"problem with filePointers"<<std::endl;
+			return false;
+		};
+	};
+
 	const string waveName = metas[0]->objectBaseName();
 	for (size_t file = 1;file<nFiles;++file){
 		if (waveName != metas[file]->objectBaseName()){
@@ -1085,7 +1092,9 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 	// connect tree leaf
 	for (size_t file=0; file<nFiles;++file){
 		amplitudeTreeLeaf* ampTreeLeaf = 0;
-		metas[file]->amplitudeTree()->SetBranchAddress(amplitudeMetadata::amplitudeLeafName.c_str(), &ampTreeLeaf);
+		TTree* ampTree = metas[file]->amplitudeTree();
+		ampTree->SetBranchAddress(amplitudeMetadata::amplitudeLeafName.c_str(), &ampTreeLeaf);
+
 		map<string, double> additionalLeaves;
 		if (onTheFlyBinning) {
 			if (evtMetas[file] == 0) {

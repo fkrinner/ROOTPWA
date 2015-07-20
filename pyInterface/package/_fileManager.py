@@ -116,6 +116,7 @@ class fileManager:
 		pyRootPwa.utils.printInfo("number of amplitude files: " + str(len(self.amplitudeFiles)))
 		self.integralFiles = self._getIntegralFilePaths()
 		pyRootPwa.utils.printInfo("number of integral files: " + str(len(self.integralFiles)))
+		self.binIDmap = self._initBinIDmap()
 		return True
 
 
@@ -153,7 +154,6 @@ class fileManager:
 					break
 			if found: 
 				return dataFile
-		print "blbv::;::",self.binList[binID][binningVariable]
 		pyRootPwa.utils.printWarn("no data dataFile found for binID = " + str(binID) + " and eventsType = '" + str(eventsType) + "'.")
 		return False
 
@@ -188,6 +188,7 @@ class fileManager:
 		else:
 			return self.integralFiles[(binID, fileManager.eventsTypeFromBpEnum(eventsType), additionalBinID)]
 
+
 	def getBinID(self, binInformation):
 		foundBins = []
 		for binID in range(len(self.binList)):
@@ -210,6 +211,28 @@ class fileManager:
 			raise Exception("do this properly")
 		return self.binList[binID]
 
+	def getBinIDfromAddBinID(self, addBinID):
+		if not self.binned:
+			pyRootPwa.utils.printErr("no additional binning available. set in the config file")
+			raise Exception
+		return self.binIDmap[addBinID]
+
+	def getAddBinIDfromBinID(self, binID):
+		if not self.binned:
+			pyRootPwa.utils.printErr("no additional binning available. set in the config file")
+			raise Exception
+		addIDs = []
+		for addID in self.binIDmap:
+			if binID in self.binIDmap[addID]:
+				addIDs.append(addID)
+		return addIDs
+
+	def getActiveBins(self):
+		active = []
+		for binID in self.getBinIDList():
+			if len(self.getAddBinIDfromBinID(binID)):
+				active.append(binID)
+		return active
 
 	def getBinIDList(self):
 		return range(len(self.binList))
@@ -218,6 +241,18 @@ class fileManager:
 	def getWaveNameList(self):
 		return self.keyFiles.keys()
 
+	def _initBinIDmap(self):
+		binIDmap = {}
+		for addID, addBin in enumerate(self.additionalBinning):
+			binIDmap[addID] = []
+			mMin,mMax = addBin["mass"]
+			for binID, bin in enumerate(self.binList):
+				binMin,binMax = bin["mass"]
+				binMin = float(binMin)/1000.
+				binMax = float(binMax)/1000.
+				if (not binMin >= mMax) and (not binMax <= mMin):
+					binIDmap[addID].append(binID)
+		return binIDmap
 
 	def _getBinningAxes(self, fileList):
 		if not fileList:
@@ -316,6 +351,9 @@ class fileManager:
 
 		return amplitudeFiles
 
+	def getIntegralFilePathAdditionalID(self, addBinID, eventsType):
+		return self.integralDirectory+os.sep+self._getBinningString(addBinID)+"_"+str(eventsType)+".root"
+
 
 	def _getIntegralFilePaths(self):
 		integralFiles = {}
@@ -328,6 +366,7 @@ class fileManager:
 				else:
 					integralFiles[(binID, eventsType)] = self.integralDirectory + "/integral_binID-" + str(binID) + "_" + str(eventsType) + ".root"
 		return integralFiles
+
 
 	def _getBinningString(self,additionalBinID):
 		bin = self.additionalBinning[additionalBinID]

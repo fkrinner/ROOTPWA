@@ -155,7 +155,7 @@ bool rpwa::hli::calcBinnedIntegralsFromEventTree(       const rpwa::eventMetadat
 	
 	boost::progress_display* progressIndicator = (printProgress) ? new boost::progress_display(nmbEvents-startEvent, std::cout, "") : 0;
 
-std::cout<<"-=-=-=-=-=-=-=-="<<maxNmbEvents<<";;;"<<nmbEventsTree<<std::endl;
+//std::cout<<"-=-=-=-=-=-=-=-="<<maxNmbEvents<<";;;"<<nmbEventsTree<<std::endl;
 	printInfo<<"integrate over eventIndex: "<<startEvent<<"-"<<nmbEvents<<std::endl;
 	for(long int eventIndex = startEvent; eventIndex < nmbEvents; ++eventIndex){
 		if(progressIndicator) {

@@ -15,7 +15,6 @@ if __name__ == "__main__":
 
 	parser.add_argument("outputFileName", type=str, metavar="fileName", help="path to output file")
 	parser.add_argument("-c", type=str, metavar="configFileName", dest="configFileName", default="./rootpwa.config", help="path to config file (default: './rootpwa.config')")
-	parser.add_argument("-b", type=int, metavar="#", dest="binID", default=0, help="bin ID of fit (default: 0)")
 	parser.add_argument("-B", type=int, metavar="addBin", dest="addBinID",default=0, help="additional bin index") 
 	parser.add_argument("-s", type=int, metavar="#", dest="seed", default=0, help="random seed (default: 0)")
 	parser.add_argument("-C", "--cauchyPriors", help="use half-Cauchy priors (default: false)", action="store_true")
@@ -34,6 +33,7 @@ if __name__ == "__main__":
 	pyRootPwa.utils.stdoutisatty = sys.stdout.isatty()
 	pyRootPwa.utils.stderrisatty = sys.stderr.isatty()
 
+
 	printErr  = pyRootPwa.utils.printErr
 	printWarn = pyRootPwa.utils.printWarn
 	printSucc = pyRootPwa.utils.printSucc
@@ -50,7 +50,11 @@ if __name__ == "__main__":
 		printErr("loading the file manager failed. Aborting...")
 		sys.exit(1)
 
-	binIDs = [args.binID]
+	if not args.addBinID > -1:
+		printErr("no bin given")
+		raise Exception
+
+	binIDs = fileManager.getBinIDfromAddBinID(args.addBinID)
 
 	mMax = 0.
 	mMin = float("inf")
@@ -67,7 +71,7 @@ if __name__ == "__main__":
 				ampFileList[key] = []
 			ampFileList[key].append(ampFileListBin[key])
 
-		binningMap = fileManager.getBinFromID(args.binID)
+		binningMap = fileManager.getBinFromID(binID)
 		mMin = min(mMin, binningMap['mass'][0])
 		mMax = max(mMax, binningMap['mass'][1])
 	
@@ -78,19 +82,11 @@ if __name__ == "__main__":
 	elif args.addBinID >0:
 		printWarn("addBin > 0, but no binning in fileManager")
 
-	if fileManager.binned:
-		psIntegralPath  = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.GENERATED, args.addBinID)
-	else:
-		psIntegralPath  = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.GENERATED)
-
+	psIntegralPath = fileManager.getIntegralFilePathAdditionalID(args.addBinID, pyRootPwa.core.eventMetadata.GENERATED)
 	if not args.genIntFilename == "":
 		psIntegralPath = args.genIntFilename
 
-	if fileManager.binned:
-		accIntegralPath = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.ACCEPTED, args.addBinID)
-	else:
-		accIntegralPath = fileManager.getIntegralFilePath(args.binID, pyRootPwa.core.eventMetadata.ACCEPTED)
-
+	accIntegralPath = fileManager.getIntegralFilePathAdditionalID(args.addBinID, pyRootPwa.core.eventMetadata.ACCEPTED)
 	if not args.accIntFilename == "":
 		accIntegralPath = args.accIntFilename
 

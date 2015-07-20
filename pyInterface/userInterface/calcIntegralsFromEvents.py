@@ -11,6 +11,8 @@ import pyRootPwa.core
 import os
 import datetime
 
+integralObjectName = "integral"
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="calculate integral matrices")
 
@@ -43,9 +45,14 @@ if __name__ == "__main__":
 		pyRootPwa.utils.printErr("loading the file manager failed. Aborting...")
 		sys.exit(1)
 
-	binIDList = fileManager.getBinIDList()
+	binIDList = fileManager.getActiveBins()
 	if (not args.massBin == -1):
 		binIDList = [args.massBin]
+	if (not args.addBinID == -1):
+		if (not args.massBin == -1):
+			printWarn("Override -b option")
+		binIDlist = fileManager.getBinIDfromAddBinID(args.addBinID)
+
 
 	eventsTypes = []
 	if (args.eventsType == "generated"):
@@ -71,26 +78,37 @@ if __name__ == "__main__":
 			waveNames.append(waveDescription.waveName(amp))
 			amplitudes[-1].init()
 
-	try:
-		binnings =  fileManager.additionalBinning
-	except AttributeError:
-		binnings = [] 
 
-	if args.addBinID > -1:
-		if len(binnings) == 0:
-			raise Exception("addBinID given, but no additional binning found")
-		binnings=[binnings[args.addBinID]]
-
-	integrals = []
-	if len(binnings) == 0:
-		integrals.append(pyRootPwa.core.ampIntegralMatrix())
-		integrals[-1].initialize(waveNames)
-	else:
-		for binn in binnings:
-			integrals.append(pyRootPwa.core.ampIntegralMatrix())
-			integrals[-1].initialize(waveNames)
 	print datetime.datetime.now()
 	for binID in binIDList:
+		allBinnings =  fileManager.additionalBinning
+
+		
+
+		if args.addBinID > -1:
+			binnings=[allBinnings[args.addBinID]]
+			indices = [args.addBinID]
+		else:
+			binnings = []
+			indices = fileManager.getAddBinIDfromBinID(binID)
+			print indices
+			print allBinnings
+			for index in indices:
+				binnings.append(allBinnings[index])
+		
+
+
+
+
+		integrals = []
+		if len(binnings) == 0:
+			integrals.append(pyRootPwa.core.ampIntegralMatrix())
+			integrals[-1].initialize(waveNames)
+		else:
+			for binn in binnings:
+				integrals.append(pyRootPwa.core.ampIntegralMatrix())
+				integrals[-1].initialize(waveNames)
+
 		for eventsType in eventsTypes:
 
 			inputFileName  = fileManager.getDataFile(binID, eventsType).dataFileName
@@ -114,14 +132,14 @@ if __name__ == "__main__":
 				integrals[0].Write("integral")
 				outROOT.Close()
 			else:
-				for additionalBinID in range(len(binnings)):
+				for iInt,additionalBinID in enumerate(indices):
 					outputFileName = fileManager.getIntegralFilePath(binID, eventsType, additionalBinID).replace(".root",args.appendString+".root")
-					print "am writing",additionalBinID,outputFileName, len(integrals)
+					printInfo("writing "+str(additionalBinID)+" "+outputFileName+" "+str(len(integrals)))
 					directory = os.path.dirname(outputFileName)
 					if not os.path.isdir(directory):
 						os.makedirs(directory)
 					outROOT = pyRootPwa.ROOT.TFile.Open(outputFileName,"RECREATE")
-					integrals[additionalBinID].Write("integral")
+					integrals[iInt].Write(integralObjectName)
 					outROOT.Close()
 			printSucc("wrote integral matrices to "+outputFileName)
 	print datetime.datetime.now()

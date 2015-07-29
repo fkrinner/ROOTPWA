@@ -261,7 +261,7 @@ namespace rpwa {
 		inline std::vector<unsigned int> waveIndicesMatchingPattern   (const std::string& waveNamePattern   ) const;
 		inline std::vector<unsigned int> prodAmpIndicesMatchingPattern(const std::string& prodAmpNamePattern) const;
 		std::vector<unsigned int>        prodAmpIndicesForWave        (const unsigned int waveIndex         ) const
-		{ return prodAmpIndicesMatchingPattern(waveNameEsc(waveIndex).Data()); }  ///< returns indices of production amplitudes that belong to wave at index
+		{return prodAmpIndicesMatchingPattern((std::string(waveNameEsc(waveIndex).Data())+"$").c_str()); }  ///< returns indices of production amplitudes that belong to wave at index
 		inline std::vector<std::pair<unsigned int, unsigned int> > prodAmpIndexPairsForWaves
 		(const unsigned int waveIndexA,
 		 const unsigned int waveIndexB) const;

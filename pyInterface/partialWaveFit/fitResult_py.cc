@@ -140,26 +140,32 @@ namespace {
 	}
 
 	double fitResult_intensity_1(const rpwa::fitResult& self, const unsigned int waveIndex) {
+std::cout<<"Intensity 1 is called ololo"<<std::endl;
 		return self.intensity(waveIndex);
 	}
 
 	double fitResult_intensityErr_1(const rpwa::fitResult& self, const unsigned int waveIndex) {
+std::cout<<"Intensity Err 1 is called ololo"<<std::endl;
 			return self.intensityErr(waveIndex);
 	}
 
 	double fitResult_intensity_2(const rpwa::fitResult& self, const char* waveNamePattern) {
+std::cout<<"Intensity 2 is beigellll"<<std::endl;
 		return self.intensity(waveNamePattern);
 	}
 
 	double fitResult_intensityErr_2(const rpwa::fitResult& self, const char* waveNamePattern) {
+std::cout<<"IntensityERRRRRRRRRRRRRRRRRRRRRRRRRRRRRR 2 is called ololo"<<std::endl;
 			return self.intensityErr(waveNamePattern);
 	}
 
 	double fitResult_intensity_3(const rpwa::fitResult& self) {
+std::cout<<"Intensity dreieieie igigi is called ololo"<<std::endl;
 		return self.intensity();
 	}
 
 	double fitResult_intensityErr_3(const rpwa::fitResult& self) {
+std::cout<<"IntensityERRERRERR (err3)  is called ololo"<<std::endl;
 			return self.intensityErr();
 	}
 

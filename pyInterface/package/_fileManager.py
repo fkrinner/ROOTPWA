@@ -234,12 +234,18 @@ class fileManager:
 				active.append(binID)
 		return active
 
+	def getAdditionalBinIDS(self):
+		return range(len(self.additionalBinning))
+
 	def getBinIDList(self):
 		return range(len(self.binList))
 
 
 	def getWaveNameList(self):
 		return self.keyFiles.keys()
+
+	def getWavelistFileName(self, addBinID):
+		return self.keyDirectory+os.sep+'wavelists'+os.sep+self._getBinningString(addBinID)
 
 	def _initBinIDmap(self):
 		binIDmap = {}

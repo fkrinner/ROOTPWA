@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+sys.path.append("/nfs/hicran/project/compass/analysis/fkrinner/ROOTPWA/build/pyLib")
 
 import pyRootPwa
 import pyRootPwa.core
@@ -128,33 +129,28 @@ if __name__ == "__main__":
 	printInfo("writing result to '" + args.outputFileName + "'")
 	valTreeName   = "pwa"
 	valBranchName = "fitResult_v2"
-
-	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "RECREATE")
+	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "UPDATE")
 	if ((not outputFile) or outputFile.IsZombie()):
 		printErr("cannot open output file '" + args.outputFileName + "'. Aborting...")
 		sys.exit(1)
-	fitResult.Write("pwa")
+	tree = outputFile.Get(valTreeName)
+	if (not tree):
+		printInfo("file '" + args.outputFileName + "' is empty. "
+		        + "creating new tree '" + valTreeName + "' for PWA result.")
+		tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
+		if not fitResult.branch(tree, valBranchName):
+			printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
+			sys.exit(1)
+	else:
+		fitResult.setBranchAddress(tree, valBranchName)
+	tree.Fill()
+	nmbBytes = tree.Write()
 	outputFile.Close()
+	if nmbBytes == 0:
+		printErr("problems writing integral to TKey 'fitResult' "
+		       + "in file '" + args.outputFileName + "'")
+		sys.exit(1)
+	else:
+		printSucc("wrote integral to TKey 'fitResult' "
+		        + "in file '" + args.outputFileName + "'")
 
-	
-
-#	tree = outputFile.Get(valTreeName)
-#	if (not tree):
-#		printInfo("file '" + args.outputFileName + "' is empty. "
-#		        + "creating new tree '" + valTreeName + "' for PWA result.")
-#		tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
-#		if not fitResult.branch(tree, valBranchName):
-#			printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
-#			sys.exit(1)
-#	else:
-#		fitResult.setBranchAddress(tree, valBranchName)
-#	tree.Fill()
-#	nmbBytes = tree.Write()
-#	outputFile.Close()
-#	if nmbBytes == 0:
-#		printErr("problems writing integral to TKey 'fitResult' "
-#		       + "in file '" + args.outputFileName + "'")
-#		sys.exit(1)
-#	else:
-#		printSucc("wrote integral to TKey 'fitResult' "
-#		        + "in file '" + args.outputFileName + "'")

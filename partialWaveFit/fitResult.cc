@@ -359,12 +359,14 @@ fitResult::spinDensityMatrixElem(const unsigned int waveIndexA,
 	// get pairs of amplitude indices with the same rank for waves A and B
 	const vector<pair<unsigned int, unsigned int> > prodAmpIndexPairs
 		= prodAmpIndexPairsForWaves(waveIndexA, waveIndexB);
-	if (prodAmpIndexPairs.size() == 0)
+	if (prodAmpIndexPairs.size() == 0){
 		return 0;
+	};
 	// sum up amplitude products
 	complex<double> spinDens = 0;
-	for (unsigned int i = 0; i < prodAmpIndexPairs.size(); ++i)
+	for (unsigned int i = 0; i < prodAmpIndexPairs.size(); ++i){
 		spinDens += prodAmp(prodAmpIndexPairs[i].first) * conj(prodAmp(prodAmpIndexPairs[i].second));
+	};
 	return spinDens;
 }
 

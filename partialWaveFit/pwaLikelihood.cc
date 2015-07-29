@@ -1052,18 +1052,29 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 		         << "Aborting..." << endl;
 		return false;
 	}
-	if (metas.size() == 0){
+	const bool onTheFlyBinning = ((binningMap == 0) ? false : true);
+	if (onTheFlyBinning and metas.size() != evtMetas.size()){
+		printErr<<"metas.size() and evtMetas.size() do not match"<<std::endl;
+		return false;
+	};
+
+	if (metas.empty()){
 		printErr<<"no amplitude file given"<<std::endl;
 		return false;
 	};
 	const unsigned int nFiles = metas.size();
 	for (size_t file=0;file<nFiles;++file){
-		if (metas[file] == 0 or evtMetas[file] == 0){
+		if (metas[file] == 0){
 			printErr<<"problem with filePointers"<<std::endl;
 			return false;
 		};
+		if(onTheFlyBinning){
+			if (evtMetas[file] == 0){
+				printErr<<"problem with evtFilePointers"<<std::endl;
+				return false;
+			};
+		};
 	};
-
 	const string waveName = metas[0]->objectBaseName();
 	for (size_t file = 1;file<nFiles;++file){
 		if (waveName != metas[file]->objectBaseName()){
@@ -1071,30 +1082,21 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 			return false;
 		};
 	};
-
 	if (_waveParams.count(waveName) == 0) {
 		printErr << "requested to add decay amplitudes for wave '" << waveName << "' which is not in wavelist. Aborting..." << endl;
 		return false;
 	}
 	const unsigned int refl = _waveParams[waveName].first;
 	const unsigned int waveIndex = _waveParams[waveName].second;
-
 	// get normalization
 	const complexT normInt = _normMatrix[refl][waveIndex][refl][waveIndex];
-
 	vector<complexT> amps;
-	const bool onTheFlyBinning = ((binningMap == 0) ? false : true);
-	if (onTheFlyBinning and metas.size() != evtMetas.size()){
-		printErr<<"metas.size() and evtMetas.size() do not match"<<std::endl;
-		return false;
-	};
-
 	// connect tree leaf
+
 	for (size_t file=0; file<nFiles;++file){
 		amplitudeTreeLeaf* ampTreeLeaf = 0;
 		TTree* ampTree = metas[file]->amplitudeTree();
 		ampTree->SetBranchAddress(amplitudeMetadata::amplitudeLeafName.c_str(), &ampTreeLeaf);
-
 		map<string, double> additionalLeaves;
 		if (onTheFlyBinning) {
 			if (evtMetas[file] == 0) {
@@ -1150,6 +1152,7 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 	}
 	if (_nmbEvents == 0) {
 		// first amplitude file read
+
 		_nmbEvents = nmbEvents;
 		_decayAmps.resize(extents[_nmbEvents][2][_nmbWavesReflMax]);
 	}
@@ -1158,14 +1161,11 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 		          << " events, previous file had " << _nmbEvents << " events." << endl;
 		return false;
 	}
-
 	// copy decay amplitudes into array that is indexed [event index][reflectivity][wave index]
 	// this index scheme ensures a more linear memory access pattern in the likelihood function
 	for (unsigned int iEvt = 0; iEvt < _nmbEvents; ++iEvt)
 		_decayAmps[iEvt][refl][waveIndex] = amps[iEvt];
-
 	_waveAmpAdded[refl][waveIndex] = true; // note that this amplitude has been added to the likelihood
-
 	printInfo << "read decay amplitudes of " << nmbEvents << " events for wave '" << waveName << "' into memory" << endl;
 	return true;
 }

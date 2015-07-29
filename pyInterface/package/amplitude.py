@@ -58,6 +58,8 @@ def calcAmplitude(inputFileName,
 				break
 		if not foundNonZero:
 			printWarn("did not find any nonzero amplitudes, do not write")
+			emptyFile = open(outputFileName+'_all_zero','w')
+			emptyFile.close()
 			return False
 
 

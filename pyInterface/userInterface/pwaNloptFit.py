@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+sys.path.append("/nfs/hicran/project/compass/analysis/fkrinner/ROOTPWA/build/pyLib")
 
 import pyRootPwa
 import pyRootPwa.core
@@ -15,7 +16,7 @@ if __name__ == "__main__":
 
 	parser.add_argument("outputFileName", type=str, metavar="fileName", help="path to output file")
 	parser.add_argument("-c", type=str, metavar="configFileName", dest="configFileName", default="./rootpwa.config", help="path to config file (default: './rootpwa.config')")
-	parser.add_argument("-B", type=int, metavar="addBin", dest="addBinID",default=0, help="additional bin index") 
+	parser.add_argument("-B", type=int, metavar="addBin", dest="addBinID",default=-1, help="additional bin index") 
 	parser.add_argument("-s", type=int, metavar="#", dest="seed", default=0, help="random seed (default: 0)")
 	parser.add_argument("-C", "--cauchyPriors", help="use half-Cauchy priors (default: false)", action="store_true")
 	parser.add_argument("-P", "--cauchyPriorWidth", type=float, metavar ="WIDTH", default=0.5, help="width of half-Cauchy prior (default: 0.5)")
@@ -129,43 +130,30 @@ if __name__ == "__main__":
 	printInfo("writing result to '" + args.outputFileName + "'")
 	valTreeName   = "pwa"
 	valBranchName = "fitResult_v2"
-
-	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "RECREATE")
+	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "UPDATE")
 	if ((not outputFile) or outputFile.IsZombie()):
 		printErr("cannot open output file '" + args.outputFileName + "'. Aborting...")
 		sys.exit(1)
-	fitResult.Write("pwa")
+	tree = outputFile.Get(valTreeName)
+	if (not tree):
+		printInfo("file '" + args.outputFileName + "' is empty. "
+		        + "creating new tree '" + valTreeName + "' for PWA result.")
+		tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
+		if not fitResult.branch(tree, valBranchName):
+			printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
+			sys.exit(1)
+	else:
+		fitResult.setBranchAddress(tree, valBranchName)
+	tree.Fill()
+	nmbBytes = tree.Write()
 	outputFile.Close()
+	if nmbBytes == 0:
+		printErr("problems writing integral to TKey 'fitResult' "
+		       + "in file '" + args.outputFileName + "'")
+		sys.exit(1)
+	else:
+		printSucc("wrote integral to TKey 'fitResult' "
+		        + "in file '" + args.outputFileName + "'")
 
-	
-	if False:
-		if (not fitResult):
-			printErr("didn't get a valid fit result. Aborting...")
-			sys.exit(1)
-		printInfo("writing result to '" + args.outputFileName + "'")
-		valTreeName   = "pwa"
-		valBranchName = "fitResult_v2"
-		outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "UPDATE")
-		if ((not outputFile) or outputFile.IsZombie()):
-			printErr("cannot open output file '" + args.outputFileName + "'. Aborting...")
-			sys.exit(1)
-		tree = outputFile.Get(valTreeName)
-		if (not tree):
-			printInfo("file '" + args.outputFileName + "' is empty. "
-				+ "creating new tree '" + valTreeName + "' for PWA result.")
-			tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
-			if not fitResult.branch(tree, valBranchName):
-				printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
-				sys.exit(1)
-		else:
-			fitResult.setBranchAddress(tree, valBranchName)
-		tree.Fill()
-		nmbBytes = tree.Write()
-		outputFile.Close()
-		if nmbBytes == 0:
-			printErr("problems writing integral to TKey 'fitResult' "
-			       + "in file '" + args.outputFileName + "'")
-			sys.exit(1)
-		else:
-			printSucc("wrote integral to TKey 'fitResult' "
-				+ "in file '" + args.outputFileName + "'")
+
+

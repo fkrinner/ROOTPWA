@@ -292,7 +292,7 @@ void rpwa::py::exportPwaLikelihood() {
 			   bp::arg("accEventsOverride") = 0)
 		)
 		.def("addAmplitude",::pwaLikelihood_addAmplitude1)
-		.def("addAmplitude",::pwaLikelihood_addAmplitude2)
+//		.def("addAmplitude",::pwaLikelihood_addAmplitude2)
 		.def("addAmplitude",::pwaLikelihood_addAmplitude3)
 		.def("addAmplitude",::pwaLikelihood_addAmplitude4)
 

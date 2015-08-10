@@ -18,6 +18,7 @@ if __name__ == "__main__":
 	parser.add_argument("-c", type=str, metavar="configFileName", dest="configFileName", default="./rootpwa.config", help="path to config file (default: './rootpwa.config')")
 	parser.add_argument("-B", type=int, metavar="addBin", dest="addBinID",default=-1, help="additional bin index") 
 	parser.add_argument("-s", type=int, metavar="#", dest="seed", default=0, help="random seed (default: 0)")
+	parser.add_argument("-N", type=int, metavar="#", dest="seedsOneJob", default=1, help="number random seeds in one job. avoids to read the data for every seed, but does them in one job squentially (default: 1)")
 	parser.add_argument("-C", "--cauchyPriors", help="use half-Cauchy priors (default: false)", action="store_true")
 	parser.add_argument("-P", "--cauchyPriorWidth", type=float, metavar ="WIDTH", default=0.5, help="width of half-Cauchy prior (default: 0.5)")
 	parser.add_argument("-w", type=str, metavar="path", dest="waveListFileName", default="", help="path to wavelist file (default: none)")
@@ -104,7 +105,7 @@ if __name__ == "__main__":
 		keyFiles[waveName] = keyFilesWithAmpIndex[waveName][0]
 
 
-	fitResult = pyRootPwa.pwaNloptFit(
+	fitResults = pyRootPwa.pwaNloptFit(
 	                                  ampFileList = ampFileList,
 	                                  normIntegralFileName = psIntegralPath,
 	                                  accIntegralFileName = accIntegralPath,
@@ -121,30 +122,33 @@ if __name__ == "__main__":
 	                                  rank = args.rank,
 	                                  verbose = args.verbose,
 	                                  addBinningMap = addBinningMap,
-	                                  evtFileNameList = eventFileNames
+	                                  evtFileNameList = eventFileNames,
+	                                  nSeeds = args.seedsOneJob
 	                                  )
-
-	if (not fitResult):
-		printErr("didn't get a valid fit result. Aborting...")
-		sys.exit(1)
-	printInfo("writing result to '" + args.outputFileName + "'")
-	valTreeName   = "pwa"
-	valBranchName = "fitResult_v2"
 	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "UPDATE")
-	if ((not outputFile) or outputFile.IsZombie()):
-		printErr("cannot open output file '" + args.outputFileName + "'. Aborting...")
-		sys.exit(1)
-	tree = outputFile.Get(valTreeName)
-	if (not tree):
-		printInfo("file '" + args.outputFileName + "' is empty. "
-		        + "creating new tree '" + valTreeName + "' for PWA result.")
-		tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
-		if not fitResult.branch(tree, valBranchName):
-			printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
+	for fitResult in fitResults:
+		if (not fitResult):
+			printErr("didn't get a valid fit result. skip...")
+			continue
+		printInfo("writing result to '" + args.outputFileName + "'")
+		valTreeName   = "pwa"
+		valBranchName = "fitResult_v2"
+
+		if ((not outputFile) or outputFile.IsZombie()):
+			printErr("cannot open output file '" + args.outputFileName + "'. Aborting...")
 			sys.exit(1)
-	else:
-		fitResult.setBranchAddress(tree, valBranchName)
-	tree.Fill()
+
+		tree = outputFile.Get(valTreeName)
+		if (not tree):
+			printInfo("file '" + args.outputFileName + "' is empty. "
+				+ "creating new tree '" + valTreeName + "' for PWA result.")
+			tree = pyRootPwa.ROOT.TTree(valTreeName, valTreeName)
+			if not fitResult.branch(tree, valBranchName):
+				printErr("failed to create new branch '" + valBranchName + "' in file '" + args.outputFileName + "'.")
+				sys.exit(1)
+		else:
+			fitResult.setBranchAddress(tree, valBranchName)
+		tree.Fill()
 	nmbBytes = tree.Write()
 	outputFile.Close()
 	if nmbBytes == 0:

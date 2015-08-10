@@ -162,7 +162,7 @@ pwaLikelihood<complexT>::FdF
 
 	// build complex production amplitudes from function parameters taking into account rank restrictions
 	value_type    prodAmpFlat;
-	ampsArrayType prodAmps;
+	productionAmpsArrayType prodAmps;
 	copyFromParArray(par, prodAmps, prodAmpFlat);
 	const value_type prodAmpFlat2 = prodAmpFlat * prodAmpFlat;
 
@@ -171,8 +171,8 @@ pwaLikelihood<complexT>::FdF
 	// !NOTE! although stored as and constructed from complex values,
 	// the dL themselves are _not_ well defined complex numbers!
 	value_type                                     derivativeFlat = 0;
-	boost::array<typename ampsArrayType::index, 3> derivShape     = {{ _rank, 2, _nmbWavesReflMax }};
-	ampsArrayType                                  derivatives(derivShape);
+	boost::array<typename productionAmpsArrayType::index, 3> derivShape     = {{ _rank, 2, _nmbWavesReflMax }};
+	productionAmpsArrayType                                  derivatives(derivShape);
 
 	// loop over events and calculate real-data term of log likelihood
 	// as well as derivatives with respect to parameters
@@ -184,12 +184,12 @@ pwaLikelihood<complexT>::FdF
 		derivativesAcc(derivShape);
 	for (unsigned int iEvt = 0; iEvt < _nmbEvents; ++iEvt) {
 		accumulator_set<value_type, stats<tag::sum(compensated)> > likelihoodAcc;
-		ampsArrayType derivative(derivShape);  // likelihood derivatives for this event
+		productionAmpsArrayType derivative(derivShape);  // likelihood derivatives for this event
 		for (unsigned int iRank = 0; iRank < _rank; ++iRank) {  // incoherent sum over ranks
 			for (unsigned int iRefl = 0; iRefl < 2; ++iRefl) {  // incoherent sum over reflectivities
 				accumulator_set<complexT, stats<tag::sum(compensated)> > ampProdAcc;
 				for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {  // coherent sum over waves
-					ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iEvt][iRefl][iWave]);
+					ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iRefl][iEvt][iWave]);
 				}
 				const complexT ampProdSum = sum(ampProdAcc);
 				likelihoodAcc(norm(ampProdSum));
@@ -202,7 +202,7 @@ pwaLikelihood<complexT>::FdF
 			// of decay amplitude of the wave with the derivative wave index
 			for (unsigned int iRefl = 0; iRefl < 2; ++iRefl)
 				for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave)
-					derivative[iRank][iRefl][iWave] *= conj(_decayAmps[iEvt][iRefl][iWave]);
+					derivative[iRank][iRefl][iWave] *= conj(_decayAmps[iRefl][iEvt][iWave]);
 		}  // end loop over rank
 		likelihoodAcc   (prodAmpFlat2            );
 		logLikelihoodAcc(-log(sum(likelihoodAcc)));
@@ -313,7 +313,7 @@ pwaLikelihood<complexT>::DoEval(const double* par) const
 
 	// build complex production amplitudes from function parameters taking into account rank restrictions
 	value_type    prodAmpFlat;
-	ampsArrayType prodAmps;
+	productionAmpsArrayType prodAmps;
 	copyFromParArray(par, prodAmps, prodAmpFlat);
 	const value_type prodAmpFlat2 = prodAmpFlat * prodAmpFlat;
 
@@ -336,7 +336,7 @@ pwaLikelihood<complexT>::DoEval(const double* par) const
 				for (unsigned int iRefl = 0; iRefl < 2; ++iRefl) {  // incoherent sum over reflectivities
 					accumulator_set<complexT, stats<tag::sum(compensated)> > ampProdAcc;
 					for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {  // coherent sum over waves
-						ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iEvt][iRefl][iWave]);
+						ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iRefl][iEvt][iWave]);
 					}
 					const complexT ampProdSum = sum(ampProdAcc);
 					likelihoodAcc(norm(ampProdSum));
@@ -488,7 +488,7 @@ pwaLikelihood<complexT>::Gradient
 
 	// build complex production amplitudes from function parameters taking into account rank restrictions
 	value_type    prodAmpFlat;
-	ampsArrayType prodAmps;
+	productionAmpsArrayType prodAmps;
 	copyFromParArray(par, prodAmps, prodAmpFlat);
 
 	// create array of likelihood derivatives w.r.t. real and imaginary
@@ -496,8 +496,8 @@ pwaLikelihood<complexT>::Gradient
 	// !NOTE! although stored as and constructed from complex values,
 	// the dL themselves are _not_ well defined complex numbers!
 	value_type                                     derivativeFlat = 0;
-	boost::array<typename ampsArrayType::index, 3> derivShape     = {{ _rank, 2, _nmbWavesReflMax }};
-	ampsArrayType                                  derivatives(derivShape);
+	boost::array<typename productionAmpsArrayType::index, 3> derivShape     = {{ _rank, 2, _nmbWavesReflMax }};
+	productionAmpsArrayType                                  derivatives(derivShape);
 
 	// loop over events and calculate derivatives with respect to parameters
 	TStopwatch timer;
@@ -518,12 +518,12 @@ pwaLikelihood<complexT>::Gradient
 		const value_type prodAmpFlat2 = prodAmpFlat * prodAmpFlat;
 		for (unsigned int iEvt = 0; iEvt < _nmbEvents; ++iEvt) {
 			accumulator_set<value_type, stats<tag::sum(compensated)> > likelihoodAcc;
-			ampsArrayType derivative(derivShape);  // likelihood derivatives for this event
+			productionAmpsArrayType derivative(derivShape);  // likelihood derivatives for this event
 			for (unsigned int iRank = 0; iRank < _rank; ++iRank) {  // incoherent sum over ranks
 				for (unsigned int iRefl = 0; iRefl < 2; ++iRefl) {  // incoherent sum over reflectivities
 					accumulator_set<complexT, stats<tag::sum(compensated)> > ampProdAcc;
 					for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {  // coherent sum over waves
-						ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iEvt][iRefl][iWave]);
+						ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iRefl][iEvt][iWave]);
 					}
 					const complexT ampProdSum = sum(ampProdAcc);
 					likelihoodAcc(norm(ampProdSum));
@@ -536,7 +536,7 @@ pwaLikelihood<complexT>::Gradient
 				// of decay amplitude of the wave with the derivative wave index
 				for (unsigned int iRefl = 0; iRefl < 2; ++iRefl)
 					for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave)
-						derivative[iRank][iRefl][iWave] *= conj(_decayAmps[iEvt][iRefl][iWave]);
+						derivative[iRank][iRefl][iWave] *= conj(_decayAmps[iRefl][iEvt][iWave]);
 			}  // end loop over rank
 			likelihoodAcc(prodAmpFlat2);
 			// incorporate factor 2 / sigma
@@ -626,17 +626,17 @@ pwaLikelihood<complexT>::Hessian
 
 	// build complex production amplitudes from function parameters taking into account rank restrictions
 	value_type    prodAmpFlat;
-	ampsArrayType prodAmps;
+	productionAmpsArrayType prodAmps;
 	copyFromParArray(par, prodAmps, prodAmpFlat);
 	const value_type prodAmpFlat2 = prodAmpFlat * prodAmpFlat;
 
 	// create array to store likelihood hessian w.r.t. real and imaginary
 	// parts of the production amplitudes
 	value_type                                     hessianFlat  = 0;       // term in Hessian matrix where we derive twice w.r.t. the flat wave
-	boost::array<typename ampsArrayType::index, 3> derivShape   = {{ _rank, 2, _nmbWavesReflMax }};
-	ampsArrayType                                  flatTerms(derivShape);  // array for terms where we first derive w.r.t to
+	boost::array<typename productionAmpsArrayType::index, 3> derivShape   = {{ _rank, 2, _nmbWavesReflMax }};
+	productionAmpsArrayType                                  flatTerms(derivShape);  // array for terms where we first derive w.r.t to
 	                                                                       // a non-flat term and then w.r.t. the flat wave
-	boost::array<typename ampsArrayType::index, 7> hessianShape = {{ _rank, 2, _nmbWavesReflMax, _rank, 2, _nmbWavesReflMax, 3 }};
+	boost::array<typename productionAmpsArrayType::index, 7> hessianShape = {{ _rank, 2, _nmbWavesReflMax, _rank, 2, _nmbWavesReflMax, 3 }};
 	boost::multi_array<value_type, 7>              hessian(hessianShape);  // array to store components for Hessian matrix
 
 	// loop over events and calculate second derivatives with respect to
@@ -650,12 +650,12 @@ pwaLikelihood<complexT>::Hessian
 		hessianAcc(hessianShape);
 	for (unsigned int iEvt = 0; iEvt < _nmbEvents; ++iEvt) {
 		accumulator_set<value_type, stats<tag::sum(compensated)> > likelihoodAcc;
-		ampsArrayType derivative(derivShape);  // likelihood derivatives for this event
+		productionAmpsArrayType derivative(derivShape);  // likelihood derivatives for this event
 		for (unsigned int iRank = 0; iRank < _rank; ++iRank) {  // incoherent sum over ranks
 			for (unsigned int iRefl = 0; iRefl < 2; ++iRefl) {  // incoherent sum over reflectivities
 				accumulator_set<complexT, stats<tag::sum(compensated)> > ampProdAcc;
 				for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {  // coherent sum over waves
-					ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iEvt][iRefl][iWave]);
+					ampProdAcc(prodAmps[iRank][iRefl][iWave] * _decayAmps[iRefl][iEvt][iWave]);
 				}
 				const complexT ampProdSum = sum(ampProdAcc);
 				likelihoodAcc(norm(ampProdSum));
@@ -668,7 +668,7 @@ pwaLikelihood<complexT>::Hessian
 			// of decay amplitude of the wave with the derivative wave index
 			for (unsigned int iRefl = 0; iRefl < 2; ++iRefl)
 				for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave)
-					derivative[iRank][iRefl][iWave] *= conj(_decayAmps[iEvt][iRefl][iWave]);
+					derivative[iRank][iRefl][iWave] *= conj(_decayAmps[iRefl][iEvt][iWave]);
 		}  // end loop over rank
 		likelihoodAcc(prodAmpFlat2);
 		// incorporate factor 2 / sigma
@@ -687,7 +687,7 @@ pwaLikelihood<complexT>::Hessian
 								// last array index 2 indicates derivative w.r.t. imaginary part of first prodAmp and imaginary part of the second prodAmp
 								hessianAcc[iRank][iRefl][iWave][jRank][jRefl][jWave][2](factor2 * derivative[jRank][jRefl][jWave].imag() * derivative[iRank][iRefl][iWave].imag());
 								if(iRank == jRank and iRefl == jRefl) {
-									const complexT uPrime = conj(_decayAmps[iEvt][jRefl][jWave]) * _decayAmps[iEvt][iRefl][iWave];
+									const complexT uPrime = conj(_decayAmps[jRefl][iEvt][jWave]) * _decayAmps[iRefl][iEvt][iWave];
 									hessianAcc[iRank][iRefl][iWave][jRank][jRefl][jWave][0](-factor * uPrime.real());
 									hessianAcc[iRank][iRefl][iWave][jRank][jRefl][jWave][1](-factor * uPrime.imag());
 									hessianAcc[iRank][iRefl][iWave][jRank][jRefl][jWave][2](-factor * uPrime.real());
@@ -905,7 +905,7 @@ pwaLikelihood<complexT>::CorrectParamSigns(const double* par) const
 {
 	// build complex production amplitudes from function parameters taking into account rank restrictions
 	value_type    prodAmpFlat;
-	ampsArrayType prodAmps;
+	productionAmpsArrayType prodAmps;
 	copyFromParArray(par, prodAmps, prodAmpFlat);
 
 	if (prodAmpFlat < 0) {
@@ -1154,7 +1154,8 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 		// first amplitude file read
 
 		_nmbEvents = nmbEvents;
-		_decayAmps.resize(extents[_nmbEvents][2][_nmbWavesReflMax]);
+		_decayAmps[0].resize(extents[_nmbEvents][_nmbWavesRefl[0]]);
+		_decayAmps[1].resize(extents[_nmbEvents][_nmbWavesRefl[1]]);
 	}
 	if (nmbEvents != _nmbEvents) {
 		printWarn << "size mismatch in amplitude files: this file contains " << nmbEvents
@@ -1164,7 +1165,7 @@ pwaLikelihood<complexT>::addAmplitude(const std::vector<const rpwa::amplitudeMet
 	// copy decay amplitudes into array that is indexed [event index][reflectivity][wave index]
 	// this index scheme ensures a more linear memory access pattern in the likelihood function
 	for (unsigned int iEvt = 0; iEvt < _nmbEvents; ++iEvt)
-		_decayAmps[iEvt][refl][waveIndex] = amps[iEvt];
+		_decayAmps[refl][iEvt][waveIndex] = amps[iEvt];
 	_waveAmpAdded[refl][waveIndex] = true; // note that this amplitude has been added to the likelihood
 	printInfo << "read decay amplitudes of " << nmbEvents << " events for wave '" << waveName << "' into memory" << endl;
 	return true;
@@ -1481,7 +1482,8 @@ template<typename complexT>
 void
 pwaLikelihood<complexT>::clear()
 {
-	_decayAmps.resize(extents[0][0][0]);
+	_decayAmps[0].resize(extents[0][0]);
+	_decayAmps[1].resize(extents[0][0]);
 }
 
 
@@ -1492,7 +1494,7 @@ template<typename complexT>
 void
 pwaLikelihood<complexT>::copyFromParArray
 (const double*  inPar,             // input parameter array
- ampsArrayType& outVal,            // array of complex output values [rank][reflectivity][wave index]
+ productionAmpsArrayType& outVal,            // array of complex output values [rank][reflectivity][wave index]
  value_type&    outFlatVal) const  // output value corresponding to flat wave
 {
 	// group parameters by rank and wave index only; keeps the order defined in wave list
@@ -1517,7 +1519,36 @@ pwaLikelihood<complexT>::copyFromParArray
 			}
 	outFlatVal = inPar[parIndex];
 }
-
+template<typename complexT>
+void
+pwaLikelihood<complexT>::copyFromParArray
+(const double*  inPar,             // input parameter array
+ decayAmpsArrayType* outVal,            // array of complex output values [rank][reflectivity][wave index]
+ value_type&    outFlatVal) const  // output value corresponding to flat wave
+{
+	// group parameters by rank and wave index only; keeps the order defined in wave list
+	outVal[0].resize(extents[_rank][_nmbWavesRefl[0]]);
+	outVal[1].resize(extents[_rank][_nmbWavesRefl[1]]);
+	unsigned int parIndex = 0;
+	for (unsigned int iRank = 0; iRank < _rank; ++iRank)
+		for (unsigned int iRefl = 0; iRefl < 2; ++iRefl)
+			for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {
+				value_type re, im;
+				if (iWave < iRank)          // production amplitude is zero
+					re = im = 0;
+				else if (iWave == iRank) {  // production amplitude is real
+					re = inPar[parIndex];
+					im = 0;
+					++parIndex;
+				} else {                    // production amplitude is complex
+					re = inPar[parIndex];
+					im = inPar[parIndex + 1];
+					parIndex += 2;
+				}
+				outVal[iRefl][iRank][iWave] = complexT(re, im);
+			}
+	outFlatVal = inPar[parIndex];
+}
 
 // copy values from structure that corresponds to complex
 // production amplitudes to array that corresponds to function
@@ -1525,7 +1556,7 @@ pwaLikelihood<complexT>::copyFromParArray
 template<typename complexT>
 void
 pwaLikelihood<complexT>::copyToParArray
-(const ampsArrayType& inVal,         // values corresponding to production amplitudes
+(const productionAmpsArrayType& inVal,         // values corresponding to production amplitudes
  const value_type     inFlatVal,     // value corresponding to flat wave
  double*              outPar) const  // output parameter array
 {
@@ -1541,6 +1572,24 @@ pwaLikelihood<complexT>::copyToParArray
 	outPar[_nmbPars - 1] = inFlatVal;
 }
 
+template<typename complexT>
+void
+pwaLikelihood<complexT>::copyToParArray
+(const decayAmpsArrayType* inVal,         // values corresponding to production amplitudes
+ const value_type     inFlatVal,     // value corresponding to flat wave
+ double*              outPar) const  // output parameter array
+{
+	for (unsigned int iRank = 0; iRank < _rank; ++iRank)
+		for (unsigned int iRefl = 0; iRefl < 2; ++iRefl)
+			for (unsigned int iWave = 0; iWave < _nmbWavesRefl[iRefl]; ++iWave) {
+				bt::tuple<int, int> parIndices = _prodAmpToFuncParMap[iRank][iRefl][iWave];
+				if (bt::get<0>(parIndices) >= 0)  // real part
+					outPar[bt::get<0>(parIndices)] = inVal[iRefl][iRank][iWave].real();
+				if (bt::get<1>(parIndices) >= 0)  // imaginary part
+					outPar[bt::get<1>(parIndices)] = inVal[iRefl][iRank][iWave].imag();
+			}
+	outPar[_nmbPars - 1] = inFlatVal;
+}
 
 template<typename complexT>
 ostream&

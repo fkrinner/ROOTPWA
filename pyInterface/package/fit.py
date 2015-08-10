@@ -5,6 +5,8 @@ import pyRootPwa
 import pyRootPwa.core
 ROOT = pyRootPwa.ROOT
 
+from random import randint
+
 def readWaveList(waveListFileName, keyFiles):
 	pyRootPwa.utils.printInfo("reading amplitude names and thresholds from wave list file "
 	          + "'" + waveListFileName + "'.")
@@ -132,6 +134,7 @@ def initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binni
 
 	for wave in waveDescThres:
 
+		openFilesWave = []
 		waveName = wave[0]
 		ampFileNameList = ampFileList[waveName]
 		if not len(ampFileNameList) == len(eventMetas) and len(eventMetas) > 0:
@@ -140,7 +143,7 @@ def initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binni
 		ampMetas = []
 		for  ampFileName in ampFileNameList:
 			ampFile = ROOT.TFile.Open(ampFileName, "READ")
-			openFiles.append(ampFile)
+			openFilesWave.append(ampFile)
 			if not ampFile:
 				pyRootPwa.utils.printErr("could not open amplitude file '" + ampFileName + "'.")
 				return False
@@ -162,6 +165,8 @@ def initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binni
 #			print "write likelihood to",writeFile
 #			likelihood.Write("likelihood")
 #			outRoot.Close()
+		for fil in openFilesWave:
+			fil.Close()
 
 
 	if (not likelihood.finishInit()):
@@ -184,36 +189,70 @@ def initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binni
 
 
 
-def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[]):
+def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[],nSeeds = 1):
 
 	likelihood = initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, cauchy, cauchyWidth, accEventsOverride, rank, verbose, addBinningMap, evtFileNameList)
 
 	lowerBound = addBinningMap[binningMap.keys()[0]][0]
 	upperBound = addBinningMap[binningMap.keys()[0]][1]
-	fitResult = pyRootPwa.core.pwaFit(likelihood       = likelihood,
+	fitResults = [pyRootPwa.core.pwaFit(likelihood     = likelihood,
 	                                  massBinMin       = lowerBound,
 	                                  massBinMax       = upperBound,
 	                                  seed             = seed,
 	                                  startValFileName = startValFileName,
 	                                  checkHessian     = checkHessian,
 	                                  saveSpace        = saveSpace,
-	                                  verbose          = verbose)
-	return fitResult
+	                                  verbose          = verbose)]
+	if nSeeds > 1:
+		if not startValFileName == "":
+			pyRootPwa.utils.printWarn("multiple seeds wanted ("+str(nSeeds)+"), but start values given. additional seed may not beuseful. do the anyway")
+		minSeed = 1000
+		maxSeed = 100000
+		pyRootPwa.utils.printInfo("more than one seed. first seed given: "+str(seed)+". generate "+str(nSeeds-1)+" additional seeds from "+str(minSeed)+" to "+str(maxSeed))
+		addSeeds = [randint(minSeed,maxSeed) for i in range(nSeeds -1)]
+		for iSeed,addSeed in enumerate(addSeeds):
+			pyRootPwa.utils.printInfo("fit with additional seed "+str(iSeed)+": "+str(addSeed))
+			fitResults.append(pyRootPwa.core.pwaFit(likelihood      = likelihood,
+	                                                            massBinMin       = lowerBound,
+	                                                            massBinMax       = upperBound,
+	                                                            seed             = addSeed,
+	                                                            startValFileName = startValFileName,
+	                                                            checkHessian     = checkHessian,
+	                                                            saveSpace        = saveSpace,
+	                                                            verbose          = verbose))
+	return fitResults
 
 
-def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[]):
+def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[], nSeeds = 1):
 
 	likelihood = initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, cauchy, cauchyWidth, accEventsOverride, rank, verbose, addBinningMap, evtFileNameList)
 
 	lowerBound = addBinningMap[binningMap.keys()[0]][0]
 	upperBound = addBinningMap[binningMap.keys()[0]][1]
 
-	fitResult = pyRootPwa.core.pwaNloptFit(likelihood       = likelihood,
+	fitResults = [pyRootPwa.core.pwaNloptFit(likelihood      = likelihood,
 	                                       massBinMin       = lowerBound,
 	                                       massBinMax       = upperBound,
 	                                       seed             = seed,
 	                                       startValFileName = startValFileName,
 	                                       checkHessian     = checkHessian,
 	                                       saveSpace        = saveSpace,
-	                                       verbose          = verbose)
-	return fitResult
+	                                       verbose          = verbose)]
+	if nSeeds > 1:
+		if not startValFileName == "":
+			pyRootPwa.utils.printWarn("multiple seeds wanted ("+str(nSeeds)+"), but start values given. additional seed may not beuseful. do the anyway")
+		minSeed = 1000
+		maxSeed = 100000
+		pyRootPwa.utils.printInfo("more than one seed. first seed given: "+str(seed)+". generate "+str(nSeeds-1)+" additional seeds from "+str(minSeed)+" to "+str(maxSeed))
+		addSeeds = [randint(minSeed,maxSeed) for i in range(nSeeds -1)]
+		for iSeed,addSeed in enumerate(addSeeds):
+			pyRootPwa.utils.printInfo("fit with additional seed "+str(iSeed)+": "+str(addSeed))
+			fitResults.append(pyRootPwa.core.pwaNloptFit(likelihood      = likelihood,
+	                                                            massBinMin       = lowerBound,
+	                                                            massBinMax       = upperBound,
+	                                                            seed             = addSeed,
+	                                                            startValFileName = startValFileName,
+	                                                            checkHessian     = checkHessian,
+	                                                            saveSpace        = saveSpace,
+	                                                            verbose          = verbose))
+	return fitResults

@@ -140,32 +140,26 @@ namespace {
 	}
 
 	double fitResult_intensity_1(const rpwa::fitResult& self, const unsigned int waveIndex) {
-std::cout<<"Intensity 1 is called ololo"<<std::endl;
 		return self.intensity(waveIndex);
 	}
 
 	double fitResult_intensityErr_1(const rpwa::fitResult& self, const unsigned int waveIndex) {
-std::cout<<"Intensity Err 1 is called ololo"<<std::endl;
 			return self.intensityErr(waveIndex);
 	}
 
 	double fitResult_intensity_2(const rpwa::fitResult& self, const char* waveNamePattern) {
-std::cout<<"Intensity 2 is beigellll"<<std::endl;
 		return self.intensity(waveNamePattern);
 	}
 
 	double fitResult_intensityErr_2(const rpwa::fitResult& self, const char* waveNamePattern) {
-std::cout<<"IntensityERRRRRRRRRRRRRRRRRRRRRRRRRRRRRR 2 is called ololo"<<std::endl;
 			return self.intensityErr(waveNamePattern);
 	}
 
 	double fitResult_intensity_3(const rpwa::fitResult& self) {
-std::cout<<"Intensity dreieieie igigi is called ololo"<<std::endl;
 		return self.intensity();
 	}
 
 	double fitResult_intensityErr_3(const rpwa::fitResult& self) {
-std::cout<<"IntensityERRERRERR (err3)  is called ololo"<<std::endl;
 			return self.intensityErr();
 	}
 
@@ -284,6 +278,17 @@ std::cout<<"IntensityERRERRERR (err3)  is called ololo"<<std::endl;
 		return self.Write(name);
 	}
 
+	PyObject* comaExtractor( PyObject*          resultPy,
+	                         unsigned int       index1, 
+	                         unsigned int       index2)
+	{
+		std::vector<unsigned int> prodAmpIndices(2);
+		rpwa::fitResult* result = rpwa::py::convertFromPy<rpwa::fitResult*>(resultPy);
+		prodAmpIndices[0] = index1;
+		prodAmpIndices[1] = index2;
+		return rpwa::py::convertToPy<TMatrixT<double> >(result->prodAmpCov(prodAmpIndices));
+	}
+
 }
 
 void rpwa::py::exportFitResult() {
@@ -365,6 +370,7 @@ void rpwa::py::exportFitResult() {
 		.def("setBranchAddress", &rpwa::py::setBranchAddress<rpwa::fitResult*>)
 		.def("branch", &rpwa::py::branch<rpwa::fitResult*>);
 
-	bp::register_ptr_to_python<rpwa::fitResultPtr>();
+	bp::def("getComa", comaExtractor);
 
+	bp::register_ptr_to_python<rpwa::fitResultPtr>();
 }

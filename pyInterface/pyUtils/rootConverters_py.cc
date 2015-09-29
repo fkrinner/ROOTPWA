@@ -157,6 +157,11 @@ void rpwa::py::exportRootConverters() {
 	);
 
 	bp::def(
+		"__RootConverters_convertFromPy_rpwaFitResult", &rpwa::py::convertFromPy<rpwa::fitResult*>
+		, bp::return_internal_reference<1>()
+	);
+
+	bp::def(
 		"__RootConverters_convertFromPy_rpwaAmplitudeMetadata", &rpwa::py::convertFromPy<rpwa::amplitudeMetadata*>
 		, bp::return_internal_reference<1>()
 	);

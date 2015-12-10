@@ -104,7 +104,7 @@ if __name__ == "__main__":
 	for waveName in keyFilesWithAmpIndex:
 		keyFiles[waveName] = keyFilesWithAmpIndex[waveName][0]
 
-
+#	"""
 	fitResults = pyRootPwa.pwaNloptFit(
 	                                  ampFileList = ampFileList,
 	                                  normIntegralFileName = psIntegralPath,
@@ -125,6 +125,29 @@ if __name__ == "__main__":
 	                                  evtFileNameList = eventFileNames,
 	                                  nSeeds = args.seedsOneJob
 	                                  )
+	"""
+	with open("/nfs/mds/user/fkrinner/rootpwa_mc/commander",'w') as cmd:
+		cmd.write("fitResults = pyRootPwa.pwaNloptFit(\n")
+		cmd.write( 	"                                  ampFileList = "+str( ampFileList)+"\n")
+		cmd.write( 	"                                  normIntegralFileName = "+str( psIntegralPath)+"\n")
+		cmd.write( 	"                                  accIntegralFileName = "+str( accIntegralPath)+"\n")
+		cmd.write( 	"                                  binningMap = "+str( binningMap)+"\n")
+		cmd.write( 	"                                  waveListFileName = "+str( args.waveListFileName)+"\n")
+		cmd.write( 	"                                  keyFiles = "+str( keyFiles)+"\n")
+		cmd.write( 	"                                  seed = "+str( args.seed)+"\n")
+		cmd.write( 	"                                  cauchy = "+str( args.cauchyPriors)+"\n")
+		cmd.write( 	"                                  cauchyWidth = "+str( args.cauchyPriorWidth)+"\n")
+		cmd.write( 	"                                  startValFileName = "+str( args.startValFileName)+"\n")
+		cmd.write( 	"                                  accEventsOverride = "+str( args.accEventsOverride)+"\n")
+		cmd.write( 	"                                  checkHessian = "+str( args.checkHessian)+"\n")
+		cmd.write( 	"                                  saveSpace = "+str( args.saveSpace)+"\n")
+		cmd.write( 	"                                  rank = "+str( args.rank)+"\n")
+		cmd.write( 	"                                  verbose = "+str( args.verbose)+"\n")
+		cmd.write( 	"                                  addBinningMap = "+str( addBinningMap)+"\n")
+		cmd.write( 	"                                  evtFileNameList = "+str( eventFileNames)+"\n")
+		cmd.write( 	"                                  nSeeds = "+str(args.seedsOneJob)+"  )\n")
+	raise Exception
+	"""
 	outputFile = pyRootPwa.ROOT.TFile.Open(args.outputFileName, "UPDATE")
 	for fitResult in fitResults:
 		if (not fitResult):

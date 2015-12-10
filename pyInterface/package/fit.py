@@ -84,7 +84,8 @@ def readWaveList(waveListFileName, keyFiles):
 #		return True
 def initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, cauchy=False, cauchyWidth=0.5,  accEventsOverride=0, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[], writeFile = "/nfs/mds/user/fkrinner/rootpwa/testWriteLikelihood.root"):
 	waveDescThres = readWaveList(waveListFileName, keyFiles)
-	massBinCenter = float(addBinningMap['mass'][1] + addBinningMap['mass'][0]) / 2. /1000 # YOU CAN DO BETTER
+	print binningMap
+	massBinCenter = float(binningMap['mass'][1] + binningMap['mass'][0]) / 2. /1000 # YOU CAN DO BETTER
 
 	likelihood = pyRootPwa.core.pwaLikelihood()
 	likelihood.useNormalizedAmps(True)
@@ -189,12 +190,12 @@ def initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binni
 
 
 
-def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[],nSeeds = 1):
+def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap={}, evtFileNameList=[],nSeeds = 1):
 
 	likelihood = initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, cauchy, cauchyWidth, accEventsOverride, rank, verbose, addBinningMap, evtFileNameList)
 
-	lowerBound = addBinningMap[binningMap.keys()[0]][0]
-	upperBound = addBinningMap[binningMap.keys()[0]][1]
+	lowerBound = binningMap[binningMap.keys()[0]][0]
+	upperBound = binningMap[binningMap.keys()[0]][1]
 	fitResults = [pyRootPwa.core.pwaFit(likelihood     = likelihood,
 	                                  massBinMin       = lowerBound,
 	                                  massBinMax       = upperBound,
@@ -212,7 +213,7 @@ def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, w
 		addSeeds = [randint(minSeed,maxSeed) for i in range(nSeeds -1)]
 		for iSeed,addSeed in enumerate(addSeeds):
 			pyRootPwa.utils.printInfo("fit with additional seed "+str(iSeed)+": "+str(addSeed))
-			fitResults.append(pyRootPwa.core.pwaFit(likelihood      = likelihood,
+			fitResults.append(pyRootPwa.core.pwaFit(likelihood           = likelihood,
 	                                                            massBinMin       = lowerBound,
 	                                                            massBinMax       = upperBound,
 	                                                            seed             = addSeed,
@@ -223,14 +224,14 @@ def pwaFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, w
 	return fitResults
 
 
-def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap=[], evtFileNameList=[], nSeeds = 1):
+def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, seed=0, cauchy=False, cauchyWidth=0.5, startValFileName="", accEventsOverride=0, checkHessian=False, saveSpace=False, rank=1, verbose=False, addBinningMap={}, evtFileNameList=[], nSeeds = 1):
 
 	likelihood = initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, cauchy, cauchyWidth, accEventsOverride, rank, verbose, addBinningMap, evtFileNameList)
 
-	lowerBound = addBinningMap[binningMap.keys()[0]][0]
-	upperBound = addBinningMap[binningMap.keys()[0]][1]
+	lowerBound = binningMap[binningMap.keys()[0]][0]
+	upperBound = binningMap[binningMap.keys()[0]][1]
 
-	fitResults = [pyRootPwa.core.pwaNloptFit(likelihood      = likelihood,
+	fitResults = [pyRootPwa.core.pwaNloptFit(likelihood     = likelihood,
 	                                       massBinMin       = lowerBound,
 	                                       massBinMax       = upperBound,
 	                                       seed             = seed,
@@ -256,3 +257,46 @@ def pwaNloptFit(ampFileList, normIntegralFileName, accIntegralFileName, binningM
 	                                                            saveSpace        = saveSpace,
 	                                                            verbose          = verbose))
 	return fitResults
+
+def addIntegralsHessian(oldResult, 
+			ampFileList, 
+			normIntegralFileName, 
+			accIntegralFileName, 
+			binningMap, 
+			waveListFileName, 
+			keyFiles, 
+			cauchy=False, 
+			cauchyWidth=0.5, 
+			accEventsOverride=0, 
+			rank=1, 
+			verbose=False, 
+			addBinningMap=[], 
+			evtFileNameList=[]):
+
+	likelihood = initLikelihood(ampFileList, normIntegralFileName, accIntegralFileName, binningMap, waveListFileName, keyFiles, cauchy, cauchyWidth, accEventsOverride, rank, verbose, addBinningMap, evtFileNameList)
+	pars = []
+	for i in range(likelihood.nmbPars()):
+		parName = likelihood.parName(i);
+		pars.append(result.fitParameter(parName))
+
+	# analytically calculate Hessian
+	hessian = likelihood.Hessian(pars)
+	# calculate and check eigenvalues
+	eigenVectors = likelihood.HessianEigenVectors(hessian)
+	covMatrix = likelihood.CovarianceMatrix(hessian)
+	newResult = pyRootPwa.core.fitResult()
+	newResult.fill(oldResult.nmbEvents(),
+	               oldResult.normNmbEvents(),
+	               oldResult.massBinCenter(),
+	               oldResult.logLikelihood(),
+	               oldResult.rank(),
+	               oldResult.prodAmps(),
+	               oldResult.prodAmpNames(),
+	               covMatrix,
+	               oldResult.fitParCovIndices(),
+	               oldResult.normIntegralMatrix(),
+	               oldResult.acceptedNormIntegralMatrix(),
+	               oldResult.phaseSpaceIntegralVector(),
+	               oldResult.converged(),
+	               True)
+	return [newResult]

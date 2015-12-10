@@ -78,8 +78,9 @@ if __name__ == "__main__":
 
 	# read integral matrix from ROOT file
 	integralFile = pyRootPwa.ROOT.TFile.Open(args.integralFile)
-	integral = pyRootPwa.core.ampIntegralMatrix(integralFile.Get(pyRootPwa.core.ampIntegralMatrix.integralObjectName))
-	integralFile.Close()
+	integral = integralFile.Get(pyRootPwa.core.ampIntegralMatrix.integralObjectName)
+#	integral = pyRootPwa.core.ampIntegralMatrix(integralFile.Get(pyRootPwa.core.ampIntegralMatrix.integralObjectName))
+#	integralFile.Close()
 	nmbNormEvents = integral.nmbEvents()
 
 	overrideMass = (args.massLowerBinBoundary is not None) or (args.massBinWidth is not None)
@@ -224,8 +225,13 @@ if __name__ == "__main__":
 					progressBar.cancel()
 					printErr('could not read kinematics data. Aborting...')
 					sys.exit(1)
-
-				amp = (amplitude() * prodAmps[i]) / math.sqrt(integral.element(waveNames[i], waveNames[i]).real * nmbNormEvents)
+				print "========================"
+				print "amplitude()",amplitude()
+				print " prodAmps[i]", prodAmps[i]
+				print "integral.element(waveNames[i], waveNames[i]).real",integral.element(waveNames[i], waveNames[i]).real()
+				print "nmbNormEvents",nmbNormEvents
+				print "========================"
+				amp = (amplitude() * prodAmps[i]) / math.sqrt(integral.element(waveNames[i], waveNames[i]).real() * nmbNormEvents)
 				if reflectivities[i] > 0:
 					posReflAmpSum += amp
 				else:
@@ -246,3 +252,4 @@ if __name__ == "__main__":
 	printInfo("efficiency: " + str(100. * (float(eventsGenerated) / float(attempts))) + "%")
 
 	pyRootPwa.utils.printPrintingSummary(pyRootPwa.utils.printingCounter)
+	integralFile.Close()

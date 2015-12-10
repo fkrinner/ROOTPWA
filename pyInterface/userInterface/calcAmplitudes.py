@@ -61,6 +61,7 @@ if __name__ == "__main__":
 	parser.add_argument("-w", type=str, metavar="wavelistFileName", default="", dest="wavelistFileName", help="path to wavelist file (default: none)")
 	parser.add_argument("-N", type=str, metavar="waveName", default="", dest="waveName", help="wave name (default: '')")
 	parser.add_argument("-t", type=float, metavar="threshold", default = -1., dest="threshold", help="optional threshold for wave sepcified with -N")
+	parser.add_argument("-s", type=str, metavar="specialDataFile", default = "" , dest="specialDataFile", help="overrides the dataFiles from the fileManager")
 	args = parser.parse_args()
 
 	config = pyRootPwa.rootPwaConfig()
@@ -108,13 +109,18 @@ if __name__ == "__main__":
 	else:
 		pyRootPwa.utils.printErr("Invalid events type given ('" + args.eventsType + "'). Aborting...")
 		sys.exit(1)
-
-
+	
 	for binID in binIDList:
 		for waveName in waveList:
 			for eventsType in eventsTypes:
 				dataFile = fileManager.getDataFile(binID, eventsType)
 				if not dataFile:
 					continue
-				if not pyRootPwa.calcAmplitude(dataFile.dataFileName, fileManager.getKeyFile(waveName)[0], fileManager.getAmplitudeFilePath(binID, waveName, eventsType), args.maxNmbEvents, not args.noProgressBar, fileManager.getKeyFile(waveName)[1], wasteZeros = True):
+				if args.specialDataFile == "":
+					datFilNam = dataFile.dataFileName
+				else:
+					datFilNam = args.specialDataFile
+				if not pyRootPwa.calcAmplitude(datFilNam, fileManager.getKeyFile(waveName)[0], fileManager.getAmplitudeFilePath(binID, waveName, eventsType), args.maxNmbEvents, not args.noProgressBar, fileManager.getKeyFile(waveName)[1], wasteZeros = True):
 					pyRootPwa.utils.printWarn("could not calculate amplitude.")
+		if not args.specialDataFile == "":
+			break

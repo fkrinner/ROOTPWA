@@ -117,6 +117,7 @@ set(SOURCES
 	${UTILITIES_SUBDIR}/reportingUtilsEnvironment_py.cc
 	${UTILITIES_SUBDIR}/tPrime_py.cc
 	${HIGHLEVELINTERFACE_SUBDIR}/calcMultipleAmplitudes_py.cc
+	${HIGHLEVELINTERFACE_SUBDIR}/getMassShapes_py.cc
 	${HIGHLEVELINTERFACE_SUBDIR}/calcTprime_py.cc
 	)
 if(USE_NLOPT)

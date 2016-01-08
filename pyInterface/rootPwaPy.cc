@@ -31,6 +31,7 @@
 #include "calcAmplitude_py.h"
 #include "calcMultipleAmplitudes_py.h"
 #include "calcTprime_py.h"
+#include "getMassShapes_py.h"
 
 #include "pwaFit_py.h"
 #ifdef USE_NLOPT
@@ -104,6 +105,7 @@ BOOST_PYTHON_MODULE(libRootPwaPy){
 	rpwa::py::exportPwaFit();
 	rpwa::py::exportCalcMultipleAmplitudes();
 	rpwa::py::exportCalcTprime();
+	rpwa::py::exportGetMassShapes();
 
 #ifdef USE_NLOPT
 	rpwa::py::exportPwaNloptFit();

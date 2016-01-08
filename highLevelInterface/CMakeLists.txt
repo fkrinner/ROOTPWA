@@ -63,6 +63,7 @@ set(SOURCES
 	pwaNloptFit.cc
 	calcMultipleAmplitudes.cc
 	calcTprime.cc
+	getMassShapes.cc
 	)
 if(USE_NLOPT)
 	LIST(APPEND SOURCES pwaNloptFit.cc)

@@ -92,6 +92,80 @@ binnedMassDependence::amp(const isobarDecayVertex& v)
 
 ////////////////////////////////////////////////////////////////////////////////
 complex<double>
+polynomialMassDependence::amp(const isobarDecayVertex& v)
+{
+	complex<double> amp = 0.;
+
+	const particlePtr& parent = v.parent();
+
+	const double M = parent->lzVec().M();
+
+	double mToN = 1.;
+
+	for (size_t i = 0; i < _coefficients.size(); ++i) {
+		amp += _coefficients[i] * mToN;
+		mToN *= M;
+	}
+
+	if (_debug) {
+		printDebug << " M = " << parent->lzVec().M();
+		for (size_t i = 0; i < _coefficients.size(); ++i) {
+			printDebug << ", c" << i << " = " << _coefficients[i];
+		}
+		printDebug << ", amp = " << amp << endl;
+	}
+
+	return amp;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+complex<double>
+complexExponentialMassDependence::amp(const isobarDecayVertex& v)
+{
+
+	const particlePtr& parent = v.parent();
+
+	const double M = parent->lzVec().M();
+
+	std::complex<double> exponent(0.,2 * M_PI * (M - _mMin)/(_mMax - _mMin) * _degree);
+	std::complex<double> amp = exp(exponent);
+
+	if (_debug) {
+		printDebug << " M = " << parent->lzVec().M()
+		                      << ", _degree = " << _degree
+		                      << ", _mMin = " << _mMin
+		                      << ", _mMax = " << _mMax
+		                      << ", amp = " << amp << endl;
+	}
+	return amp;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+complex<double>
+arbitraryFunctionMassDependence::amp(const isobarDecayVertex& v)
+{
+
+	const particlePtr& parent = v.parent();
+
+	const double M = parent->lzVec().M();
+
+	std::complex<double> amp(_realPart.Eval(M), _imagPart.Eval(M));
+
+	if (_debug) {
+		printDebug << " M = " << parent->lzVec().M()
+		                      << ", _name = " << _name
+		                      << ", _realFunctionString = " << _realFunctionString
+		                      << ", _imagFunctionString = " << _imagFunctionString
+		                      << ", amp = " << amp << endl;
+	}
+	return amp;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+complex<double>
 relativisticBreitWigner::amp(const isobarDecayVertex& v)
 {
 	const particlePtr& parent = v.parent();

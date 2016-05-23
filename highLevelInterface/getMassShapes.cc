@@ -34,13 +34,13 @@ namespace {
 
 
 	std::vector<std::complex<double> > getMassShapesRecursive(const rpwa::isobarDecayVertexPtr& vertex,            // vertex
-	                                                          rpwa::isobarDecayTopologyPtr&     topo,
+	                                                          rpwa::isobarDecayTopology&        topo,
 	                                                          const double                      mass,              // masss
 	                                                          const bool                        useBarrierFactors) {
 
 		std::vector<std::complex<double> > shapes(1,getSingleMassShape(vertex, mass, useBarrierFactors));
 		rpwa::particlePtr daughter1 = vertex->daughter1();
-		rpwa::isobarDecayVertexPtr daughter1Vertex = boost::dynamic_pointer_cast<rpwa::isobarDecayVertex>(topo->toVertex(daughter1));
+		rpwa::isobarDecayVertexPtr daughter1Vertex = boost::dynamic_pointer_cast<rpwa::isobarDecayVertex>(topo.toVertex(daughter1));
 		if (daughter1Vertex) {
 			std::vector<std::complex<double> > daughter1Amps = getMassShapesRecursive(daughter1Vertex, topo, mass, useBarrierFactors);
 			for (size_t i = 0; i < daughter1Amps.size(); ++i) {
@@ -48,7 +48,7 @@ namespace {
 			}
 		}
 		rpwa::particlePtr daughter2 = vertex->daughter2();
-		rpwa::isobarDecayVertexPtr daughter2Vertex = boost::dynamic_pointer_cast<rpwa::isobarDecayVertex>(topo->toVertex(daughter2));
+		rpwa::isobarDecayVertexPtr daughter2Vertex = boost::dynamic_pointer_cast<rpwa::isobarDecayVertex>(topo.toVertex(daughter2));
 		if (daughter2Vertex) {
 			std::vector<std::complex<double> > daughter2Amps = getMassShapesRecursive(daughter2Vertex, topo, mass, useBarrierFactors);
 			for (size_t i = 0; i < daughter2Amps.size(); ++i) {
@@ -59,9 +59,9 @@ namespace {
 	}
 }
 
-std::vector<std::complex<double> > rpwa::getMassShapes(isobarDecayTopologyPtr &topo,
-	                                               const double            mass,
-	                                               const bool              useBarrierFactors) {
+std::vector<std::complex<double> > rpwa::getMassShapes(isobarDecayTopology &topo,
+	                                               const double         mass,
+	                                               const bool           useBarrierFactors) {
 
-	return ::getMassShapesRecursive(topo->XIsobarDecayVertex(), topo, mass, useBarrierFactors);
+	return ::getMassShapesRecursive(topo.XIsobarDecayVertex(), topo, mass, useBarrierFactors);
 }

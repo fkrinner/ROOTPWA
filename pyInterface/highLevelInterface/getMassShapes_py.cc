@@ -4,9 +4,9 @@
 
 namespace bp = boost::python;
 namespace {
-	bp::list getMassShapes_py(rpwa::isobarDecayTopologyPtr &topo,
-			         double                         mass,
-			         bool                           useBarrierFactors) {
+	bp::list getMassShapes_py(rpwa::isobarDecayTopology &topo,
+			         double                      mass,
+			         bool                        useBarrierFactors) {
 		return bp::list(getMassShapes(topo, mass, useBarrierFactors));
 	}
 }

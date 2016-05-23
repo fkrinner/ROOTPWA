@@ -66,8 +66,11 @@ namespace {
 	typedef boost::shared_ptr<libconfig::Config> configPtr;
 
 
-	const std::string binBorders = "bins";
-	const std::string expandName = "expand";
+	const std::string binBorders     = "bins";
+	const std::string degreeName     = "degree";
+	const std::string realCoeffName  = "realCoefficients";
+	const std::string imagCoeffName  = "imagCoefficients";
+	const std::string expandName     = "expand";
 	const std::string expandTypeName = "type";
 	const std::string expandNameName = "name";
 
@@ -168,6 +171,32 @@ namespace {
 
 				const std::vector<configPtr> newExpanded = expand(newConfig);
 				expanded.insert(expanded.end(), newExpanded.begin(), newExpanded.end());
+			}
+		} else if (expandType == "taylor") {
+			int degree = 0;
+			if (not toExpand->lookupValue(degreeName, degree)) {
+				printErr << "no degree given" << std::endl;
+				throw;
+			}
+			parent.remove(expandName);
+			for (int i = 0; i < degree+1; ++i) {
+				parent.add(realCoeffName, Setting::TypeList);
+				parent.add(imagCoeffName, Setting::TypeList);
+				for (int j = 0; j < i; ++j) {
+					parent[realCoeffName.c_str()].add(libconfig::Setting::TypeFloat) = 0.;
+					parent[imagCoeffName.c_str()].add(libconfig::Setting::TypeFloat) = 0.;
+				}
+				parent[realCoeffName.c_str()].add(libconfig::Setting::TypeFloat) = 1.;
+				parent[imagCoeffName.c_str()].add(libconfig::Setting::TypeFloat) = 0.;
+				configPtr newConfig(new libconfig::Config);
+				copyConfig(*config, *newConfig, waveDescription::debug());
+
+				parent.remove(realCoeffName);
+				parent.remove(imagCoeffName);
+
+				const std::vector<configPtr> newExpanded = expand(newConfig);
+				expanded.insert(expanded.end(), newExpanded.begin(), newExpanded.end());
+
 			}
 		} else {
 			printErr << "expand type '" << expandType << "' unknown." << std::endl;

@@ -68,6 +68,8 @@ namespace {
 
 	const std::string binBorders     = "bins";
 	const std::string degreeName     = "degree";
+	const std::string mMinName       = "mMin";		
+	const std::string mMaxName       = "mMax";
 	const std::string realCoeffName  = "realCoefficients";
 	const std::string imagCoeffName  = "imagCoefficients";
 	const std::string expandName     = "expand";
@@ -175,7 +177,7 @@ namespace {
 		} else if (expandType == "taylor") {
 			int degree = 0;
 			if (not toExpand->lookupValue(degreeName, degree)) {
-				printErr << "no degree given" << std::endl;
+				printErr << "no degree given. Aborting..." << std::endl;
 				throw;
 			}
 			parent.remove(expandName);
@@ -196,7 +198,38 @@ namespace {
 
 				const std::vector<configPtr> newExpanded = expand(newConfig);
 				expanded.insert(expanded.end(), newExpanded.begin(), newExpanded.end());
+			}
+		} else if (expandType == "fourier") {
+			int degree = 0;
+			if (not toExpand->lookupValue(degreeName, degree)) {
+				printErr << "no degree given. Aborting..." << std::endl;
+				throw;
+			}
+			double mMin = 0.;
+			if (not toExpand->lookupValue(mMinName, mMin)) {
+				printErr << "no lower mass border given. Aborting..." << std::endl;
+				throw;
+			}
+			double mMax = 0.;
+			if (not toExpand->lookupValue(mMaxName, mMax)) {
+				printErr << "no upper mass border given. Aborting..." << std::endl;
+				throw;
+			}
+			parent.remove(expandName);
+			for (int i = -degree; i < degree+1; ++i) {
+				parent.add(degreeName.c_str(), libconfig::Setting::TypeInt)   = i;
+				parent.add(mMinName.c_str()   , libconfig::Setting::TypeFloat) = mMin;
+				parent.add(mMaxName.c_str()   , libconfig::Setting::TypeFloat) = mMax;
 
+				configPtr newConfig(new libconfig::Config);
+				copyConfig(*config, *newConfig, waveDescription::debug());
+
+				parent.remove(degreeName);
+				parent.remove(mMinName);
+				parent.remove(mMaxName);
+
+				const std::vector<configPtr> newExpanded = expand(newConfig);
+				expanded.insert(expanded.end(), newExpanded.begin(), newExpanded.end());
 			}
 		} else {
 			printErr << "expand type '" << expandType << "' unknown." << std::endl;

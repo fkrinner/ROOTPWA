@@ -44,7 +44,6 @@ using namespace std;
 using namespace boost::numeric::ublas;
 using namespace rpwa;
 
-
 ////////////////////////////////////////////////////////////////////////////////
 bool massDependence::_debug = false;
 
@@ -92,6 +91,31 @@ binnedMassDependence::amp(const isobarDecayVertex& v)
 
 ////////////////////////////////////////////////////////////////////////////////
 complex<double>
+sawtoothMassDependence::amp(const isobarDecayVertex& v)
+{
+	complex<double> amp = 0.;
+
+	const particlePtr& parent = v.parent();
+
+	const double M = parent->lzVec().M();
+
+	if (_mMin <= M && M < _mMax) {
+		amp = 2. * (M - _mMin) / (_mMax - _mMin) - 1.;
+	} else {
+		amp = 0.;
+	}
+	if (_debug)
+		printDebug << name() << " M = " << parent->lzVec().M()
+		                     << ", _mMin = " << _mMin
+		                     << ", _mMax = " << _mMax
+		                     << ", amp = " << amp << endl;
+
+	return amp;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+complex<double>
 polynomialMassDependence::amp(const isobarDecayVertex& v)
 {
 	complex<double> amp = 0.;
@@ -100,11 +124,13 @@ polynomialMassDependence::amp(const isobarDecayVertex& v)
 
 	const double M = parent->lzVec().M();
 
-	double mToN = 1.;
+	double x = 2*M/(_mMax - _mMin) - (_mMax + _mMin)/(_mMax - _mMin);
+
+	double xToN = 1.;
 
 	for (size_t i = 0; i < _coefficients.size(); ++i) {
-		amp += _coefficients[i] * mToN;
-		mToN *= M;
+		amp += _coefficients[i] * xToN;
+		xToN *= x;
 	}
 
 	if (_debug) {

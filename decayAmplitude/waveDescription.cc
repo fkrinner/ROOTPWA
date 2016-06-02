@@ -101,6 +101,32 @@ namespace {
 	}
 
 
+	std::vector<double> getChebyshevCoefficients(size_t n) {
+		std::vector<double> coefficientsNMinus2(1,1.);
+		if (n == 0) {
+			return coefficientsNMinus2;
+		}
+		std::vector<double> coefficientsNMinus1(1,0.);
+		coefficientsNMinus1.push_back(1.);
+		if (n == 1) {
+			return coefficientsNMinus1;
+		}
+		std::vector<double> coefficientsN;
+		for (size_t degree = 2; degree < n+1; ++degree) {
+			coefficientsN = std::vector<double>(degree+1,0.); // A polynomial of degree n has n+1 coefficients
+			coefficientsN[0] = -coefficientsNMinus2[0];
+			for (size_t i = 1; i < degree-1; ++i) {
+				coefficientsN[i] = 2*coefficientsNMinus1[i-1] - coefficientsNMinus2[i];
+			}
+			coefficientsN[degree-1] = 2*coefficientsNMinus1[degree-2];
+			coefficientsN[degree  ]  = 2*coefficientsNMinus1[degree-1];
+			coefficientsNMinus2 = coefficientsNMinus1;
+			coefficientsNMinus1 = coefficientsN;
+		}
+		return coefficientsN;
+	}
+
+
 	std::vector<double>
 	getBinning(const libconfig::Setting* setting)
 	{
@@ -225,6 +251,44 @@ namespace {
 				copyConfig(*config, *newConfig, waveDescription::debug());
 
 				parent.remove(degreeName);
+				parent.remove(mMinName);
+				parent.remove(mMaxName);
+
+				const std::vector<configPtr> newExpanded = expand(newConfig);
+				expanded.insert(expanded.end(), newExpanded.begin(), newExpanded.end());
+			}
+		} else if (expandType == "chebyshev") {
+			int degree = 0;
+			if (not toExpand->lookupValue(degreeName, degree)) {
+				printErr << "no degree given. Aborting..." << std::endl;
+				throw;
+			}
+			double mMin = 0.;
+			if (not toExpand->lookupValue(mMinName, mMin)) {
+				printErr << "no lower mass border given. Aborting..." << std::endl;
+				throw;
+			}
+			double mMax = 0.;
+			if (not toExpand->lookupValue(mMaxName, mMax)) {
+				printErr << "no upper mass border given. Aborting..." << std::endl;
+				throw;
+			}
+			parent.remove(expandName);
+			for (int i = 0; i < degree; ++i) {
+				parent.add(realCoeffName, Setting::TypeList);
+				parent.add(imagCoeffName, Setting::TypeList);
+				std::vector<double> coefficients = getChebyshevCoefficients(i);
+				parent.add(mMinName.c_str()   , libconfig::Setting::TypeFloat) = mMin;
+				parent.add(mMaxName.c_str()   , libconfig::Setting::TypeFloat) = mMax;
+				for (int j = 0; j < i+1; ++j) {
+					parent[realCoeffName.c_str()].add(libconfig::Setting::TypeFloat) = coefficients[j];
+					parent[imagCoeffName.c_str()].add(libconfig::Setting::TypeFloat) = 0.;
+				}
+				configPtr newConfig(new libconfig::Config);
+				copyConfig(*config, *newConfig, waveDescription::debug());
+
+				parent.remove(realCoeffName);
+				parent.remove(imagCoeffName);
 				parent.remove(mMinName);
 				parent.remove(mMaxName);
 
@@ -625,23 +689,33 @@ waveDescription::waveNameFromTopology(isobarDecayTopology         topo,
 			if (vertex->massDependence() && vertex->massDependence()->name() == "binned") {
 				const particle& P = *(currentVertex->daughter1());
 				binnedMassDependencePtr massDep = static_pointer_cast<binnedMassDependence>(vertex->massDependence());
-				waveName << "[" << spinQn(P.isospin()) << parityQn(P.G()) << ","
+				waveName << "binned[" << spinQn(P.isospin()) << parityQn(P.G()) << ","
 				         << spinQn(P.J()) << parityQn(P.P()) << parityQn(P.C()) << ","
 				         << massDep->getMassMin() << "," << massDep->getMassMax() << "]";
+			} else if(vertex->massDependence() && vertex->massDependence()->name() == "sawtooth") {
+				const particle& P = *(currentVertex->daughter1());
+				sawtoothMassDependencePtr massDep = static_pointer_cast<sawtoothMassDependence>(vertex->massDependence());
+				waveName << "sawtooth[" << spinQn(P.isospin()) << parityQn(P.G()) << ","
+				         << spinQn(P.J()) << parityQn(P.P()) << parityQn(P.C()) << ","
+				         << massDep->getMassMin() << "," << massDep->getMassMax() << "]";
+
 			} else if (vertex->massDependence() && vertex->massDependence()->name() == "polynomial") {
+				const particle& P = *(currentVertex->daughter1());
 				polynomialMassDependencePtr massDep = static_pointer_cast<polynomialMassDependence>(vertex->massDependence());
 				std::vector<std::complex<double> > coefficients = massDep->getCoefficients();
-				waveName << "[polynomial";
+				waveName << "polynomial[" << spinQn(P.isospin()) << parityQn(P.G()) << "," << massDep->getMassMin() << "," << massDep->getMassMax();
 				for (size_t i = 0; i < coefficients.size(); ++i) {
 					waveName << ",[" << coefficients[i].real() << "," << coefficients[i].imag() << "]";
 				}
 				waveName << "]";
 			} else if (vertex->massDependence() && vertex->massDependence()->name() == "complexExponential") {
+				const particle& P = *(currentVertex->daughter1());
 				complexExponentialMassDependencePtr massDep = static_pointer_cast<complexExponentialMassDependence>(vertex->massDependence());
-				waveName << "[complexExponential," << massDep->getDegree() << "," << massDep->getMassMin() << "," << massDep->getMassMax() << "]";
+				waveName << "complexExponential[" << spinQn(P.isospin()) << parityQn(P.G()) << "," << massDep->getDegree() << "," << massDep->getMassMin() << "," << massDep->getMassMax() << "]";
 			} else if (vertex->massDependence() && vertex->massDependence()->name() == "arbitraryFunction") {
+				const particle& P = *(currentVertex->daughter1());
 				arbitraryFunctionMassDependencePtr massDep = static_pointer_cast<arbitraryFunctionMassDependence>(vertex->massDependence());
-				waveName << "[arbitrary," << massDep->getRealFunctionString() << "," << massDep->getImagFunctionString() << "]";
+				waveName << "arbitrary[" << spinQn(P.isospin()) << parityQn(P.G()) << "," << massDep->getRealFunctionString() << "," << massDep->getImagFunctionString() << "]";
 			} else
 				waveName << currentVertex->daughter1()->name();
 			waveName << waveNameFromTopology(topo, vertex);
@@ -658,23 +732,33 @@ waveDescription::waveNameFromTopology(isobarDecayTopology         topo,
 			if (vertex->massDependence() && vertex->massDependence()->name() == "binned") {
 				const particle& P = *(currentVertex->daughter2());
 				binnedMassDependencePtr massDep = static_pointer_cast<binnedMassDependence>(vertex->massDependence());
-				waveName << "[" << spinQn(P.isospin()) << parityQn(P.G()) << ","
+				waveName << "binned[" << spinQn(P.isospin()) << parityQn(P.G()) << ","
 				         << spinQn(P.J()) << parityQn(P.P()) << parityQn(P.C()) << ","
 				         << massDep->getMassMin() << "," << massDep->getMassMax() << "]";
+			} else if(vertex->massDependence() && vertex->massDependence()->name() == "sawtooth") {
+				const particle& P = *(currentVertex->daughter2());
+				sawtoothMassDependencePtr massDep = static_pointer_cast<sawtoothMassDependence>(vertex->massDependence());
+				waveName << "sawtooth[" << spinQn(P.isospin()) << parityQn(P.G()) << ","
+				         << spinQn(P.J()) << parityQn(P.P()) << parityQn(P.C()) << ","
+				         << massDep->getMassMin() << "," << massDep->getMassMax() << "]";
+
 			} else if (vertex->massDependence() && vertex->massDependence()->name() == "polynomial") {
+				const particle& P = *(currentVertex->daughter2());
 				polynomialMassDependencePtr massDep = static_pointer_cast<polynomialMassDependence>(vertex->massDependence());
 				std::vector<std::complex<double> > coefficients = massDep->getCoefficients();
-				waveName << "[polynomial";
+				waveName << "polynomial[" << spinQn(P.isospin()) << parityQn(P.G()) << "," << massDep->getMassMin() << "," << massDep->getMassMax();
 				for (size_t i = 0; i < coefficients.size(); ++i) {
-					waveName << " ," << coefficients[i];
+					waveName << ",[" << coefficients[i].real() << "," << coefficients[i].imag() << "]";
 				}
 				waveName << "]";
 			} else if (vertex->massDependence() && vertex->massDependence()->name() == "complexExponential") {
+				const particle& P = *(currentVertex->daughter2());
 				complexExponentialMassDependencePtr massDep = static_pointer_cast<complexExponentialMassDependence>(vertex->massDependence());
-				waveName << "[complexExponential, " << massDep->getDegree() << ", " << massDep->getMassMin() << ", " << massDep->getMassMax() << "]";
+				waveName << "complexExponential[" << spinQn(P.isospin()) << parityQn(P.G()) << "," << massDep->getDegree() << "," << massDep->getMassMin() << "," << massDep->getMassMax() << "]";
 			} else if (vertex->massDependence() && vertex->massDependence()->name() == "arbitraryFunction") {
+				const particle& P = *(currentVertex->daughter2());
 				arbitraryFunctionMassDependencePtr massDep = static_pointer_cast<arbitraryFunctionMassDependence>(vertex->massDependence());
-				waveName << "[arbitrary, " << massDep->getRealFunctionString() << ", " << massDep->getImagFunctionString() << "]";
+				waveName << "arbitrary[" << spinQn(P.isospin()) << parityQn(P.G()) << "," << massDep->getRealFunctionString() << "," << massDep->getImagFunctionString() << "]";
 			} else
 				waveName << currentVertex->daughter2()->name();
 			waveName << waveNameFromTopology(topo, vertex);
@@ -974,9 +1058,40 @@ waveDescription::mapMassDependenceType(const Setting* massDepKey)
 			printErr << "bounds are not ordered: mMin(" << mMin << ") > mMax(" << mMax << ")." << std::endl;
 			throw;
 		}
-		massDep = createbinnedMassDependence(mMin, mMax);
+		massDep = createBinnedMassDependence(mMin, mMax);
+	}
+	else if (massDepType == "sawtooth") {
+		const libconfig::Setting* bounds = rpwa::findLibConfigList(*massDepKey, "bounds" , false);
+		if (not bounds) {
+			printErr << "no bounds given for sawtooth mass dependence." << std::endl;
+			throw;
+		}
+		const int length = bounds->getLength();
+		if (length != 2) {
+			printErr << "bounds do not have the required length (expected: 2, found: " << length << ")." << std::endl;
+			throw;
+		}
+		const double mMin = (*bounds)[0];
+		const double mMax = (*bounds)[1];
+		if (mMin > mMax) {
+			printErr << "bounds are not ordered: mMin(" << mMin << ") > mMax(" << mMax << ")." << std::endl;
+			throw;
+		}
+		massDep = createSawtoothMassDependence(mMin, mMax);
 	}
 	else if (massDepType == "polynomial") {
+		double mMin = 0.;
+		bool mMinFound = massDepKey->lookupValue("mMin", mMin);
+		double mMax = 0.;
+		bool mMaxFound = massDepKey->lookupValue("mMax", mMax);
+		if (mMinFound != mMaxFound) {
+			printErr << "something wrong with the setting of the mass boundaries. Aborting..." << std::endl;
+			throw;
+		}
+		if (not mMinFound) {
+			mMin = -1.; // No mass boundaries were given. So no scaling is set.
+			mMax =  1.; // This is avieved by the mMin = -1. and mMax = 1.
+		}
 		const libconfig::Setting* realCoefficients = rpwa::findLibConfigList(*massDepKey, "realCoefficients" , false);
 		if (not realCoefficients) {
 			printErr << "no real coefficients given for polynomial mass dependence" << std::endl;
@@ -1001,7 +1116,7 @@ waveDescription::mapMassDependenceType(const Setting* massDepKey)
 				coefficients.push_back(std::complex<double>((*realCoefficients)[i], 0.));
 			}
 		}
-		massDep = createPolynomialMassDependencePtr(coefficients);
+		massDep = createPolynomialMassDependencePtr(coefficients, mMin, mMax);
 	}
 	else if (massDepType == "complexExponential") {
 		int degree = 0;
@@ -1250,6 +1365,15 @@ waveDescription::setMassDependence(Setting&              isobarDecayKey,
 			bounds.add(Setting::TypeFloat) = binned.getMassMin();
 			bounds.add(Setting::TypeFloat) = binned.getMassMax();
 		}
+		if (massDepName == "sawtooth") {
+			// for this mass dependence additionally the mass bound
+			// have to be stored in the keyfile.
+			const sawtoothMassDependence& binned = dynamic_cast<const sawtoothMassDependence&>(massDep);
+
+			Setting& bounds = massDepKey.add("bounds", Setting::TypeList);
+			bounds.add(Setting::TypeFloat) = binned.getMassMin();
+			bounds.add(Setting::TypeFloat) = binned.getMassMax();
+		}
 		if (massDepName == "polynomial") {
 			// for this mass dependence additionally the polynomial coefficients have to be stored
 			const polynomialMassDependence& polynomial = dynamic_cast<const polynomialMassDependence&>(massDep);
@@ -1260,6 +1384,8 @@ waveDescription::setMassDependence(Setting&              isobarDecayKey,
 				realCoefficients.add(Setting::TypeFloat) = coefficients[i].real();
 				imagCoefficients.add(Setting::TypeFloat) = coefficients[i].imag();
 			}
+			massDepKey.add("mMin", Setting::TypeFloat) = polynomial.getMassMin();
+			massDepKey.add("mMax", Setting::TypeFloat) = polynomial.getMassMax();
 		}
 		if (massDepName == "complexExponential") {
 			// for this mass dependence additionally the degree and range have to be stroed

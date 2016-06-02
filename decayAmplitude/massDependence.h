@@ -153,9 +153,44 @@ namespace rpwa {
 
 	inline
 	binnedMassDependencePtr
-	createbinnedMassDependence(double mMin, double mMax)
+	createBinnedMassDependence(double mMin, double mMax)
 	{
 		binnedMassDependencePtr massDep(new binnedMassDependence(mMin, mMax));
+		return massDep;
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////////
+	/// Brief trivial sawtooth mass dependence over a range
+	class sawtoothMassDependence : public massDependence {
+
+	public:
+
+		sawtoothMassDependence(const double mMin, const double mMax) : massDependence(), _mMin(mMin), _mMax(mMax) { }
+		virtual ~sawtoothMassDependence()                                                                         { }
+
+		virtual std::complex<double> amp(const isobarDecayVertex&);
+
+		virtual std::string name() const { return "sawtooth"; }  ///< returns label used in graph visualization, reporting, and key file
+
+		double getMassMin() const { return _mMin; }
+		double getMassMax() const { return _mMax; }
+
+	private:
+		double _mMin;  ///< Lower limit of the isobar mass bin
+		double _mMax;  ///< Upper limit of the isobar mass bin
+
+	};
+
+
+	typedef boost::shared_ptr<sawtoothMassDependence> sawtoothMassDependencePtr;
+
+
+	inline
+	sawtoothMassDependencePtr
+	createSawtoothMassDependence(double mMin, double mMax)
+	{
+		sawtoothMassDependencePtr massDep(new sawtoothMassDependence(mMin, mMax));
 		return massDep;
 	}
 
@@ -165,16 +200,25 @@ namespace rpwa {
 	class polynomialMassDependence : public massDependence {
 
 	public:
-		polynomialMassDependence(const std::vector<std::complex<double> >& coefficients) : massDependence(), _coefficients(coefficients) { }
-		virtual ~polynomialMassDependence()                                                                               { }
+		polynomialMassDependence(const std::vector<std::complex<double> >& coefficients, const double mMin, const double mMax) :
+		                                                                                             massDependence(),
+		                                                                                             _mMin(mMin),
+		                                                                                             _mMax(mMax),
+		                                                                                             _coefficients(coefficients) { }
+		virtual ~polynomialMassDependence()                                                                                      { }
 
 		virtual std::complex<double> amp(const isobarDecayVertex&);
 
 		virtual std::string name() const { return "polynomial"; } ///< returns label used in graph visualization, reporting, and key file
 
 		const std::vector<std::complex<double> >& getCoefficients() const { return _coefficients; }
+		double                                    getMassMin()         const { return _mMin; }
+		double                                    getMassMax()         const { return _mMax; }
 
 	private:
+		double                             _mMin;        ///< Mass point that gets scaled to -1. // mMin = -1, mMax = 1 -> no scaling
+		double                             _mMax;        ///< Mass point that gets scaled to  1.
+
 		std::vector<std::complex<double> > _coefficients; ///< Coefficients of the polynomial
 
 	};
@@ -185,9 +229,9 @@ namespace rpwa {
 
 	inline
 	polynomialMassDependencePtr
-	createPolynomialMassDependencePtr(std::vector<std::complex<double> >& coefficients)
+	createPolynomialMassDependencePtr(std::vector<std::complex<double> >& coefficients, double mMin, double mMax)
 	{
-		polynomialMassDependencePtr massDep(new polynomialMassDependence(coefficients));
+		polynomialMassDependencePtr massDep(new polynomialMassDependence(coefficients, mMin, mMax));
 		return massDep;
 	}
 
@@ -198,7 +242,7 @@ namespace rpwa {
 
 	public:
 		complexExponentialMassDependence(const int degree, const double mMin, const double mMax) : massDependence(), _degree(degree), _mMin(mMin), _mMax(mMax) { }
-		virtual ~complexExponentialMassDependence()                                                                                                                    { }
+		virtual ~complexExponentialMassDependence()                                                                                                            { }
 
 		virtual std::complex<double> amp(const isobarDecayVertex&);
 

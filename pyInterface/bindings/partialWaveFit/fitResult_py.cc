@@ -72,6 +72,11 @@ namespace {
 		return bp::list(self.evidenceComponents());
 	}
 
+	bp::list fitResult_waveIndicesMatchingPattern(const rpwa::fitResult& self,
+	                                              const std::string&     pattern) {
+		return bp::list(self.waveIndicesMatchingPattern(pattern));
+	}
+
 	PyObject* fitResult_prodAmpCov_1(const rpwa::fitResult& self, const unsigned int prodAmpIndex)
 	{
 		return rpwa::py::convertToPy<TMatrixT<double> >(self.prodAmpCov(prodAmpIndex));
@@ -293,6 +298,7 @@ void rpwa::py::exportFitResult() {
 		.def("waveNameForProdAmp", &rpwa::fitResult::waveNameForProdAmp)
 		.def("waveIndex", &rpwa::fitResult::waveIndex)
 		.def("prodAmpIndex", &rpwa::fitResult::prodAmpIndex)
+		.def("waveIndicesMatchingPattern", &fitResult_waveIndicesMatchingPattern)
 		.def("fitParameter", &rpwa::fitResult::fitParameter)
 		.def("fitParameterCov", &rpwa::fitResult::fitParameterCov)
 		.def("prodAmp", &fitResult::prodAmp)

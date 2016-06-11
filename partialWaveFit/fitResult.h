@@ -152,6 +152,8 @@ namespace rpwa {
 		int waveIndex   (const std::string& waveName   ) const;  ///< returns wave index corresponding to wave name
 		int prodAmpIndex(const std::string& prodAmpName) const;  ///< returns production amplitude index corresponding to production amplitude name
 
+		inline std::vector<unsigned int> waveIndicesMatchingPattern(const std::string& waveNamePattern) const;
+
 		double      fitParameter   (const std::string& parName  ) const;  ///< returns value of fit parameter with name
 		double      fitParameterErr(const std::string& parName  ) const;  ///< returns error of fit parameter with name
 		/// returns covariance of fit parameters at index A and B
@@ -269,7 +271,6 @@ namespace rpwa {
 		std::complex<double> normIntegralForProdAmp(const unsigned int prodAmpIndexA,
 		                                            const unsigned int prodAmpIndexB) const;
 
-		inline std::vector<unsigned int> waveIndicesMatchingPattern   (const std::string& waveNamePattern   ) const;
 		inline std::vector<unsigned int> prodAmpIndicesMatchingPattern(const std::string& prodAmpNamePattern) const;
 		std::vector<unsigned int>        prodAmpIndicesForWave        (const unsigned int waveIndex         ) const
 		{ return prodAmpIndicesMatchingPattern(waveNameEsc(waveIndex)); }  ///< returns indices of production amplitudes that belong to wave at index

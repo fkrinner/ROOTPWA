@@ -134,7 +134,7 @@ bool rpwa::ampIntegralMatrixMetadata::mergeIntegralMatrix(const ampIntegralMatri
 		for (size_t meta_i = 0; meta_i < secondMetas.size(); ++meta_i) {
 			if (not addEventMetadata(secondMetas[meta_i])) {
 			        printErr << "could not add event metadata." << endl;
-			        return false;
+//			        return false;
 			}
 		}
 	}

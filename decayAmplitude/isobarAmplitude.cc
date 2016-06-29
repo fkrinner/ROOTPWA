@@ -145,10 +145,10 @@ isobarAmplitude::gjTransform(const TLorentzVector& beamLv,  // beam Lorentz-vect
 		// orientation due to numerical instabilities, so only perform
 		// the boost. Print a warning if this boost is not small.
 		const TVector3 boostVector(-XLv.BoostVector());
-		if (boostVector.Mag() > numeric_limits<double>::epsilon()) {
+/*		if (boostVector.Mag() > numeric_limits<double>::epsilon()) {
 			printWarn << "Lorentz-vectors of beam and X are collinear and the boost vector to the center-of-mass system of X is not negligible (" << maxPrecisionAlign(boostVector.Mag()) << ")." << std::endl;
 		}
-
+*/
 		TLorentzRotation boost;
 		boost.Boost(boostVector);
 

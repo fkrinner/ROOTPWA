@@ -183,8 +183,7 @@ isobarCanonicalAmplitude::twoBodyDecayAmplitude(const isobarDecayVertexPtr& vert
 	}
 
 	// calculate decay amplitude
-	amp *= norm * ssClebsch * bf * bw;
-
+	amp *= norm * ssClebsch * bf *  bw;
 	if (_debug)
 		printDebug << "two-body decay amplitude = " << maxPrecisionDouble(amp) << endl;
 	return amp;

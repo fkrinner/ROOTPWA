@@ -191,7 +191,7 @@ isobarHelicityAmplitude::twoBodyDecayAmplitude(const isobarDecayVertexPtr& verte
 
 	// calculate decay amplitude
 	complex<double> amp = norm * DFunc * lsClebsch * ssClebsch * bf * bw;
-
+//	complex<double> amp = norm * DFunc * lsClebsch * ssClebsch * bf/bf * bw;
 	if (_debug)
 		printDebug << "two-body decay amplitude = " << maxPrecisionDouble(amp) << endl;
 	return amp;

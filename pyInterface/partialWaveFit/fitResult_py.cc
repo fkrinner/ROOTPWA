@@ -3,6 +3,7 @@
 #include <boost/python.hpp>
 
 #include <TTree.h>
+#include <TFile.h>
 
 #include "fitResult.h"
 #include "rootConverters_py.h"
@@ -99,6 +100,14 @@ namespace {
 	                                 const std::vector<unsigned int>& prodAmpIndicesB)
 	{
 		return rpwa::py::convertToPy<TMatrixT<double> >(self.prodAmpCov(prodAmpIndicesA, prodAmpIndicesB));
+	}
+
+	PyObject* fitResult_prodAmpCovAll(const rpwa::fitResult& self) {
+		std::vector<unsigned int> indices(self.nmbWaves());
+		for (unsigned int i = 0; i < self.nmbWaves(); ++i) {
+			indices[i] = i;
+		}
+		return rpwa::py::convertToPy<TMatrixT<double> >(self.prodAmpCov(indices));
 	}
 
 	double fitResult_phaseSpaceIntegral_1(const rpwa::fitResult& self, const unsigned int waveIndex)
@@ -262,6 +271,50 @@ namespace {
 		return self.Write(name);
 	}
 
+	bool copyFitResult(PyObject* pyInputFile, rpwa::fitResult& result)
+        {
+                TFile* inputFile = rpwa::py::convertFromPy<TFile*>(pyInputFile);
+                if(not inputFile) {
+                        printErr << "Got invalid input for inputFile when executing rpwa::eventMetadata::readEventFile()" << std::endl;
+			return false;
+                }
+		TTree* resultTree = (TTree*)(inputFile->Get("pwa"));
+		if (resultTree->GetEntries() != 1) {
+			printErr << "Entries have to be one, since no comparison im the likelihood is done" << std::endl;
+			return false;
+		}	
+		rpwa::fitResult* grp = 0;
+		if (resultTree->SetBranchAddress("fitResult_v2", &grp) < 0) {
+			printErr << "Could not set branch address in copyFitResult" << std::endl;
+			return false;
+		}
+		resultTree->GetEvent(0);
+		result.fill(*grp);
+                return true;
+	}
+
+	PyObject* makeTMatrixT(const bp::object& pyMatrix) {
+		bp::list pyList = bp::extract<bp::list>(pyMatrix);
+		int dim = bp::len(pyList);
+		std::vector<std::vector<double> > matrix(dim);
+		for (int i = 0; i < dim; ++i) {
+			bp::list pyLine = bp::extract<bp::list>(pyList[i]);
+			std::vector<double> line(dim);
+			for (int j = 0; j < dim; ++j) {
+				line[j] = bp::extract<double>(pyLine[j]);
+			}
+			matrix[i] = line;
+		}
+		TMatrixT<double> Tmatrix(dim,dim);
+		for (int i = 0; i < dim; ++i) {
+			for (int j = 0; j < dim; ++j) {
+				Tmatrix(i,j) = matrix[i][j];
+			}
+		}
+		return rpwa::py::convertToPy<TMatrixT<double> >(Tmatrix);
+	}
+
+
 }
 
 void rpwa::py::exportFitResult() {
@@ -300,6 +353,7 @@ void rpwa::py::exportFitResult() {
 		.def("prodAmpCov", &fitResult_prodAmpCov_4)
 		.def("prodAmpCov", &fitResult_prodAmpCov_2)
 		.def("prodAmpCov", &fitResult_prodAmpCov_1)
+		.def("prodAmpCovAll", &fitResult_prodAmpCovAll)
 		.def("covMatrixValid", &rpwa::fitResult::covMatrixValid)
 		.def("normIntegral", &rpwa::fitResult::normIntegral)
 		.def("acceptedNormIntegral", &rpwa::fitResult::acceptedNormIntegral)
@@ -357,5 +411,6 @@ void rpwa::py::exportFitResult() {
 		);
 
 	bp::register_ptr_to_python<rpwa::fitResultPtr>();
-
+	bp::def("copyFitResult", &copyFitResult);
+	bp::def("makeTMatrixT", &makeTMatrixT);
 }
